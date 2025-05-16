@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Variable used in pattern -->
+    <property name="LOG_PATTERN" 
+          value="%gray(%d{yyyy-MM-dd HH:mm:ss}) %highlight(%-5level) %white([MYAPP]) %gray(%logger{36}) - %white(%msg%n)"/>
+
+    <!-- Console appender: log to terminal -->
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Log for the whole application -->
+    <root level="INFO">
+        <appender-ref ref="Console"/>
+    </root>
+
+    <!-- Specify log level for your package -->
+    <logger name="swd392.eventmanagement" level="DEBUG"/>
+    
+    <!-- Reduce Spring and Hibernate logs if needed -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+
+</configuration>
