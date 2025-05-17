@@ -70,7 +70,7 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
         
         // Extract role names from user roles
-        Set<String> roles = user.getRoles().stream()
+        Set<String> roles = new HashSet<>(user.getRoles()).stream()
             .map(role -> role.getName().replace("ROLE_", ""))
             .collect(Collectors.toSet());
         

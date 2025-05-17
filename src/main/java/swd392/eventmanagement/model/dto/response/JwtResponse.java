@@ -1,6 +1,8 @@
 package swd392.eventmanagement.model.dto.response;
 
 import lombok.Data;
+import swd392.eventmanagement.model.entity.Role;
+
 import java.util.Set;
 
 @Data
