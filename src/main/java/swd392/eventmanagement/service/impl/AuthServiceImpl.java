@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -68,13 +69,19 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtUtils.generateTokenFromEmail(user.getEmail());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
         
+        // Extract role names from user roles
+        Set<String> roles = user.getRoles().stream()
+            .map(role -> role.getName().replace("ROLE_", ""))
+            .collect(Collectors.toSet());
+        
         logger.info("User successfully authenticated: {}", email);
         return new JwtResponse(
             token, 
             refreshToken.getToken(), 
             user.getId(), 
             user.getEmail(), 
-            user.getFullName());
+            user.getFullName(),
+            roles);
     }
     
     @Override
