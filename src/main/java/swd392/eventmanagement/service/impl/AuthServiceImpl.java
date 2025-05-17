@@ -70,9 +70,9 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
         
         // Extract role names from user roles
-        Set<String> roles = user.getRoles().stream()
-            .map(role -> role.getName().replace("ROLE_", ""))
-            .collect(Collectors.toSet());
+        Set<String> roles = new HashSet<>(user.getRoles()).stream()
+    .map(Role::getName)
+    .collect(Collectors.toSet());
         
         logger.info("User successfully authenticated: {}", email);
         return new JwtResponse(
