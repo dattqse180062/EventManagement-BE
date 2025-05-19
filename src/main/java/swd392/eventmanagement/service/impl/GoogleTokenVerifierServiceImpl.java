@@ -10,13 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import swd392.eventmanagement.config.properties.DomainAuthProperties;
 import swd392.eventmanagement.service.GoogleTokenVerifierService;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Arrays;
 
 @Service
 public class GoogleTokenVerifierServiceImpl implements GoogleTokenVerifierService {
@@ -25,15 +26,11 @@ public class GoogleTokenVerifierServiceImpl implements GoogleTokenVerifierServic
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
     
-    @Value("${app.auth.allowed-domains}")
-    private String allowedDomainsString;
+    private final DomainAuthProperties domainAuthProperties;
     
-    private List<String> allowedDomains;
-    
-    @Value("${app.auth.allowed-domains}")
-    public void setAllowedDomains(String allowedDomainsString) {
-        this.allowedDomains = Arrays.asList(allowedDomainsString.split(","));
-        logger.info("Allowed domains configured: {}", this.allowedDomains);
+    public GoogleTokenVerifierServiceImpl(DomainAuthProperties domainAuthProperties) {
+        this.domainAuthProperties = domainAuthProperties;
+        logger.info("Allowed domains configured: {}", this.domainAuthProperties.getAllowedDomainsList());
     }
 
     @Override
@@ -59,9 +56,14 @@ public class GoogleTokenVerifierServiceImpl implements GoogleTokenVerifierServic
         if (email == null) {
             return false;
         }
+
+        List<String> allowedDomainsList = domainAuthProperties.getAllowedDomainsList();
+        if (allowedDomainsList.isEmpty() && domainAuthProperties.getAllowedDomains() != null) {
+            allowedDomainsList = Arrays.asList(domainAuthProperties.getAllowedDomains().split(","));
+        }
         
-        for (String domain : allowedDomains) {
-            if (email.endsWith("@" + domain)) {
+        for (String domain : allowedDomainsList) {
+            if (email.endsWith("@" + domain.trim())) {
                 return true;
             }
         }
@@ -69,4 +71,4 @@ public class GoogleTokenVerifierServiceImpl implements GoogleTokenVerifierServic
         logger.warn("Email domain not allowed: {}", email);
         return false;
     }
-} 
+}

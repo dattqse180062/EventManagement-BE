@@ -3,8 +3,8 @@ package swd392.eventmanagement.service.impl;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import swd392.eventmanagement.config.properties.DomainAuthProperties;
 import swd392.eventmanagement.exception.TokenRefreshException;
 import swd392.eventmanagement.model.dto.request.GoogleTokenRequest;
 import swd392.eventmanagement.model.dto.response.JwtResponse;
@@ -29,20 +29,27 @@ import java.util.stream.Collectors;
 public class AuthServiceImpl implements AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
     
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private JwtUtils jwtUtils;
-
-    @Autowired
-    private RefreshTokenService refreshTokenService;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final JwtUtils jwtUtils;
+    private final RefreshTokenService refreshTokenService;
+    private final GoogleTokenVerifierService googleTokenVerifierService;
+    private final DomainAuthProperties domainAuthProperties;
     
-    @Autowired
-    private GoogleTokenVerifierService googleTokenVerifierService;
+    public AuthServiceImpl(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            JwtUtils jwtUtils,
+            RefreshTokenService refreshTokenService,
+            GoogleTokenVerifierService googleTokenVerifierService,
+            DomainAuthProperties domainAuthProperties) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.jwtUtils = jwtUtils;
+        this.refreshTokenService = refreshTokenService;
+        this.googleTokenVerifierService = googleTokenVerifierService;
+        this.domainAuthProperties = domainAuthProperties;
+    }
     
     @Override
     public JwtResponse authenticateWithGoogle(GoogleTokenRequest request) throws Exception {
@@ -124,9 +131,18 @@ public class AuthServiceImpl implements AuthService {
             user.setEmail(email);
             user.setFullName(name);
             user.setProviderUserId(providerId);
+              // Assign role based on email domain using the injected properties
+            String roleName;
+            String studentDomain = domainAuthProperties.getStudentDomain();
+            String lecturerDomain = domainAuthProperties.getLecturerDomain();
             
-            // Assign role based on email domain
-            String roleName = email.endsWith("@fpt.edu.vn") ? "ROLE_STUDENT" : "ROLE_LECTURER";
+            if (studentDomain != null && email.endsWith("@" + studentDomain)) {
+                roleName = "ROLE_STUDENT";
+            } else if (lecturerDomain != null && email.endsWith("@" + lecturerDomain)) {
+                roleName = "ROLE_LECTURER";
+            } else {
+                roleName = "ROLE_STUDENT"; // Default role
+            }
             
             Role userRole = roleRepository.findByName(roleName)
                     .orElseThrow(() -> new RuntimeException("Error: Role " + roleName + " is not found."));
@@ -146,4 +162,4 @@ public class AuthServiceImpl implements AuthService {
         
         return user;
     }
-} 
+}

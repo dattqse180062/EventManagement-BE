@@ -1,8 +1,7 @@
 package swd392.eventmanagement.service.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import swd392.eventmanagement.config.properties.JwtProperties;
 import swd392.eventmanagement.exception.TokenRefreshException;
 import swd392.eventmanagement.model.entity.RefreshToken;
 import swd392.eventmanagement.model.entity.User;
@@ -16,14 +15,18 @@ import java.util.UUID;
 
 @Service
 public class RefreshTokenServiceImpl implements RefreshTokenService {
-    @Value("${app.auth.jwt.refresh-expiration}")
-    private long refreshTokenDurationMs;
+    private final JwtProperties jwtProperties;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    public RefreshTokenServiceImpl(
+            JwtProperties jwtProperties,
+            RefreshTokenRepository refreshTokenRepository,
+            UserRepository userRepository) {
+        this.jwtProperties = jwtProperties;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.userRepository = userRepository;
+    }
 
     @Override
     public Optional<RefreshToken> findByToken(String token) {
@@ -38,7 +41,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .orElseThrow(() -> new RuntimeException("User not found with id " + userId));
 
         refreshToken.setUser(user);
-        refreshToken.setExpiryDate(LocalDateTime.now().plusSeconds(refreshTokenDurationMs / 1000));
+        refreshToken.setExpiryDate(LocalDateTime.now().plusSeconds(jwtProperties.getRefreshExpiration() / 1000));
         refreshToken.setToken(UUID.randomUUID().toString());
         refreshToken.setIssuedAt(LocalDateTime.now());
 
@@ -60,4 +63,4 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         refreshTokenRepository.findByToken(token)
                 .ifPresent(refreshToken -> refreshTokenRepository.delete(refreshToken));
     }
-} 
+}
