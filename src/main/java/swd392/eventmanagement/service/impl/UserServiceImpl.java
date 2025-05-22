@@ -7,10 +7,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import swd392.eventmanagement.model.dto.response.UserDTO;
 import swd392.eventmanagement.model.entity.User;
+import swd392.eventmanagement.model.mapper.UserMapper;
 import swd392.eventmanagement.repository.UserRepository;
 import swd392.eventmanagement.service.UserService;
-
-import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -18,18 +17,21 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserMapper userMapper;
+
     @Override
     public UserDTO getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || 
-            "anonymousUser".equals(authentication.getPrincipal())) {
+        if (authentication == null || !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getPrincipal())) {
             throw new UsernameNotFoundException("User not authenticated");
         }
-        
+
         String email = authentication.getName();
         User user = getUserByEmail(email);
-        
-        return mapUserToDTO(user);
+
+        return userMapper.toUserDTO(user);
     }
 
     @Override
@@ -37,18 +39,4 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
-    
-    private UserDTO mapUserToDTO(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .providerUserId(user.getProviderUserId())
-                .fullName(user.getFullName())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .roles(user.getRoles().stream()
-                        .map(role -> role.getName())
-                        .collect(Collectors.toSet()))
-                .build();
-    }
-} 
+}

@@ -1,5 +1,6 @@
 package swd392.eventmanagement.service.impl;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import swd392.eventmanagement.config.properties.JwtProperties;
 import swd392.eventmanagement.exception.TokenRefreshException;
@@ -38,7 +39,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         RefreshToken refreshToken = new RefreshToken();
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id " + userId));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id " + userId));
 
         refreshToken.setUser(user);
         refreshToken.setExpiryDate(LocalDateTime.now().plusSeconds(jwtProperties.getRefreshExpiration() / 1000));
@@ -52,12 +53,13 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(token);
-            throw new TokenRefreshException(token.getToken(), "Refresh token was expired. Please make a new signin request");
+            throw new TokenRefreshException(token.getToken(),
+                    "Refresh token was expired. Please make a new signin request");
         }
 
         return token;
     }
-    
+
     @Override
     public void deleteByToken(String token) {
         refreshTokenRepository.findByToken(token)

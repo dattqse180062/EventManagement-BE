@@ -28,11 +28,7 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Authentication successful", content = @Content(schema = @Schema(implementation = JwtResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid token or authentication failed")
     public ResponseEntity<?> authenticateWithGoogle(@RequestBody @Valid GoogleTokenRequest request) {
-        try {
-            return ResponseEntity.ok(authService.authenticateWithGoogle(request));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Authentication failed: " + e.getMessage());
-        }
+        return ResponseEntity.ok(authService.authenticateWithGoogle(request));
     }
 
     @PostMapping("/refresh")
@@ -40,11 +36,7 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Refresh token successful", content = @Content(schema = @Schema(implementation = TokenRefreshResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid token or authentication failed")
     public ResponseEntity<?> refreshToken(@RequestBody @Valid TokenRefreshRequest request) {
-        try {
-            return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
     }
 
     @PostMapping("/logout")

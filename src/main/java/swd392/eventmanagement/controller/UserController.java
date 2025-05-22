@@ -27,10 +27,6 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "User information retrieved successfully", content = @Content(schema = @Schema(implementation = UserDTO.class)))
     @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
     public ResponseEntity<?> getCurrentUser() {
-        try {
-            return ResponseEntity.ok(userService.getCurrentUser());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to retrieve user: " + e.getMessage());
-        }
+        return ResponseEntity.ok(userService.getCurrentUser());
     }
 }

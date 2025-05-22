@@ -19,7 +19,7 @@ public class DomainAuthProperties {
     private String allowedDomains;
     private String studentDomain;
     private String lecturerDomain;
-    
+
     /**
      * Get allowed domains as a list
      */

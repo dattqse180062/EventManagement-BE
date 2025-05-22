@@ -6,8 +6,11 @@ import swd392.eventmanagement.model.dto.response.TokenRefreshResponse;
 import swd392.eventmanagement.model.entity.User;
 
 public interface AuthService {
-    JwtResponse authenticateWithGoogle(GoogleTokenRequest request) throws Exception;
+    JwtResponse authenticateWithGoogle(GoogleTokenRequest request);
+
     TokenRefreshResponse refreshToken(String refreshToken);
+
     boolean logout(String refreshToken);
+
     User createOrUpdateUser(String email, String name, String providerId);
-} 
+}
