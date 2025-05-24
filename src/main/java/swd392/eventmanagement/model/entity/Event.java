@@ -1,0 +1,107 @@
+package swd392.eventmanagement.model.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import swd392.eventmanagement.enums.EventMode;
+import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.enums.TargetAudience;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(name = "events")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Event {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
+
+    @ManyToOne
+    @JoinColumn(name = "type_id", nullable = false)
+    private EventType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "audience", nullable = false)
+    private TargetAudience audience = TargetAudience.BOTH;
+
+    @ManyToOne
+    @JoinColumn(name = "location_id")
+    private Location location;
+
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalDateTime endTime;
+
+    @Column(name = "max_capacity")
+    private Integer maxCapacity;
+
+    @Column(name = "registration_start", nullable = false)
+    private LocalDateTime registrationStart;
+
+    @Column(name = "registration_end", nullable = false)
+    private LocalDateTime registrationEnd;
+
+    @Column(name = "poster_url")
+    private String posterUrl;
+
+    @Column(name = "banner_url")
+    private String bannerUrl;
+
+    @Column(name = "description")
+    private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "survey_id")
+    private Survey survey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mode", nullable = false)
+    private EventMode mode;
+
+    @ManyToOne
+    @JoinColumn(name = "platform_id")
+    private Platform platform;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private EventStatus status = EventStatus.DRAFT;
+
+    @ManyToMany
+    @JoinTable(name = "event_tag", joinColumns = @JoinColumn(name = "event_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tags = new HashSet<>();
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+}

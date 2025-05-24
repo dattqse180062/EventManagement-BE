@@ -1,47 +1,45 @@
 package swd392.eventmanagement.model.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.Set;
 
+@Entity
+@Table(name = "departments")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "users")
-public class User {
+public class Department {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
-    @Column(name = "full_name")
-    private String fullName;
+    @Column(name = "code", nullable = false, unique = true, length = 50)
+    private String code;
 
-    @Column(name = "provider_id", nullable = false, unique = true)
-    private String providerId;
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @Column(name = "banner_url")
+    private String bannerUrl;
+
+    @OneToMany(mappedBy = "department")
+    private Set<UserDepartmentRole> userDepartmentRoles;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles = new HashSet<>();
-
-    @OneToMany(mappedBy = "user")
-    private Set<UserDepartmentRole> userDepartmentRoles;
 
     @PrePersist
     protected void onCreate() {

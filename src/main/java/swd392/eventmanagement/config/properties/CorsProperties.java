@@ -36,16 +36,7 @@ public class CorsProperties {
     @Getter
     @Setter
     public static class Frontend {
-        private String host;
-        private String port;
         private String url;
-
-        public String getUrl() {
-            if (url != null && !url.isEmpty()) {
-                return url;
-            }
-            return "http://" + host + ":" + port;
-        }
     }
 
     @Getter

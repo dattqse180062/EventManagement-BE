@@ -1,34 +1,34 @@
 package swd392.eventmanagement.model.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+@Entity
+@Table(name = "tags")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "users")
-public class User {
+public class Tag {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(name = "name", nullable = false, unique = true, length = 100)
+    private String name;
 
-    @Column(name = "full_name")
-    private String fullName;
+    @Column(name = "description")
+    private String description;
 
-    @Column(name = "provider_id", nullable = false, unique = true)
-    private String providerId;
+    @ManyToMany(mappedBy = "tags")
+    private Set<Event> events = new HashSet<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -36,12 +36,8 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles = new HashSet<>();
-
-    @OneToMany(mappedBy = "user")
-    private Set<UserDepartmentRole> userDepartmentRoles;
+    @Column(name = "is_active")
+    private Boolean isActive;
 
     @PrePersist
     protected void onCreate() {

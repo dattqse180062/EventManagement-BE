@@ -14,10 +14,10 @@ import java.util.Set;
 @AllArgsConstructor
 public class UserDTO {
     private Long id;
-    private String providerUserId;
+    private String providerId;
     private String email;
     private String fullName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Set<String> roles;
-} 
+}

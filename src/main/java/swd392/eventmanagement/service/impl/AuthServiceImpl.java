@@ -3,6 +3,7 @@ package swd392.eventmanagement.service.impl;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import swd392.eventmanagement.config.properties.DomainAuthProperties;
@@ -12,9 +13,12 @@ import swd392.eventmanagement.exception.UnauthorizedDomainException;
 import swd392.eventmanagement.model.dto.request.GoogleTokenRequest;
 import swd392.eventmanagement.model.dto.response.JwtResponse;
 import swd392.eventmanagement.model.dto.response.TokenRefreshResponse;
+import swd392.eventmanagement.model.dto.response.UserDepartmentRoleDTO;
 import swd392.eventmanagement.model.entity.RefreshToken;
 import swd392.eventmanagement.model.entity.Role;
 import swd392.eventmanagement.model.entity.User;
+import swd392.eventmanagement.model.entity.UserDepartmentRole;
+import swd392.eventmanagement.model.mapper.UserDepartmentRoleMapper;
 import swd392.eventmanagement.repository.RoleRepository;
 import swd392.eventmanagement.repository.UserRepository;
 import swd392.eventmanagement.security.jwt.JwtUtils;
@@ -40,6 +44,9 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final GoogleTokenVerifierService googleTokenVerifierService;
     private final DomainAuthProperties domainAuthProperties;
+
+    @Autowired
+    private UserDepartmentRoleMapper userDepartmentRoleMapper;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -87,6 +94,13 @@ public class AuthServiceImpl implements AuthService {
                 .map(role -> role.getName().replace("ROLE_", ""))
                 .collect(Collectors.toSet());
 
+        Set<UserDepartmentRoleDTO> userDepartmentRoles;
+        if (user.getUserDepartmentRoles() != null) {
+            userDepartmentRoles = UserDepartmentRoleMapper.INSTANCE.toDTOSet(user.getUserDepartmentRoles());
+        } else {
+            userDepartmentRoles = new HashSet<>(); // Empty set if no department roles exist
+        }
+
         logger.info("User successfully authenticated: {}", email);
         return new JwtResponse(
                 token,
@@ -94,7 +108,8 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
-                roles);
+                roles,
+                userDepartmentRoles);
     }
 
     @Override
@@ -136,7 +151,7 @@ public class AuthServiceImpl implements AuthService {
             user = new User();
             user.setEmail(email);
             user.setFullName(name);
-            user.setProviderUserId(providerId);
+            user.setProviderId(providerId);
             // Assign role based on email domain using the injected properties
             String roleName;
             String studentDomain = domainAuthProperties.getStudentDomain();
