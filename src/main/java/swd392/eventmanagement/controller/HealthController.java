@@ -22,6 +22,6 @@ public class HealthController {
     @GetMapping("/cicd")
     @Operation(summary = "CI/CD test", description = "Endpoint to test CI/CD pipeline")
     public ResponseEntity<String> cicdTest() {
-        return ResponseEntity.ok("CI/CD pipeline is working correctly! Current version: 1.0");
+        return ResponseEntity.ok("CI/CD pipeline is working");
     }
 }
