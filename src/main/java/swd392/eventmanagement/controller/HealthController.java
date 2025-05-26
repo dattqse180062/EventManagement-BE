@@ -16,6 +16,12 @@ public class HealthController {
     @GetMapping("/check")
     @Operation(summary = "Health check", description = "Check if the API is running")
     public ResponseEntity<String> healthCheck() {
-        return ResponseEntity.ok("Service is up and running!");
+        return ResponseEntity.ok("API is running");
+    }
+
+    @GetMapping("/cicd")
+    @Operation(summary = "CI/CD test", description = "Endpoint to test CI/CD pipeline")
+    public ResponseEntity<String> cicdTest() {
+        return ResponseEntity.ok("CI/CD pipeline is working correctly! Current version: 1.0");
     }
 }
