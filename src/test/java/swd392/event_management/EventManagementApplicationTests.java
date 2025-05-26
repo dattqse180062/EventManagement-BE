@@ -1,13 +1,10 @@
 package swd392.event_management;
 
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+import swd392.eventmanagement.EventManagementApplication;
+
+@SpringBootTest(classes = EventManagementApplication.class)
 class EventManagementApplicationTests {
-
-	@Test
-	void contextLoads() {
-	}
-
+	// Test methods
 }
