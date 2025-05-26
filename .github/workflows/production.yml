@@ -51,6 +51,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "deployment/event-management-0.0.1-SNAPSHOT.jar"
           target: "/opt/deployment"
+          strip_components: 1
 
       - name: SSH and restart app
         uses: appleboy/ssh-action@master
