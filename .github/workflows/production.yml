@@ -60,8 +60,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/deployment
-            docker-compose down
             mkdir -p backup
             cp event-management-0.0.1-SNAPSHOT.jar backup/event-management-$(date +%Y%m%d%H%M%S).jar || echo "No previous JAR to backup"
+            docker-compose down
+            docker-compose build --no-cache
             docker-compose up -d
             docker system prune -af
