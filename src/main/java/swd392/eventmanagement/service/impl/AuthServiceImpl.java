@@ -45,9 +45,6 @@ public class AuthServiceImpl implements AuthService {
     private final GoogleTokenVerifierService googleTokenVerifierService;
     private final DomainAuthProperties domainAuthProperties;
 
-    @Autowired
-    private UserDepartmentRoleMapper userDepartmentRoleMapper;
-
     public AuthServiceImpl(
             UserRepository userRepository,
             RoleRepository roleRepository,

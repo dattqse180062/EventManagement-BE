@@ -2,14 +2,16 @@ package swd392.eventmanagement.model.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-
+import lombok.Setter;
 import jakarta.persistence.*;
 import java.io.Serializable;
 
 @Entity
 @Table(name = "event_capacity")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventCapacity {

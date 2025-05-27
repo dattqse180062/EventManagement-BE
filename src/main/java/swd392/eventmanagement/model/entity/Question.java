@@ -1,15 +1,17 @@
 package swd392.eventmanagement.model.entity;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import swd392.eventmanagement.enums.QuestionType;
 
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "questions")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Question {
