@@ -28,11 +28,11 @@ public class Event {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "type_id", nullable = false)
     private EventType type;
 
@@ -40,7 +40,7 @@ public class Event {
     @Column(name = "audience", nullable = false)
     private TargetAudience audience = TargetAudience.BOTH;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
     private Location location;
 
@@ -68,7 +68,7 @@ public class Event {
     @Column(name = "description")
     private String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "survey_id")
     private Survey survey;
 
@@ -76,7 +76,7 @@ public class Event {
     @Column(name = "mode", nullable = false)
     private EventMode mode;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "platform_id")
     private Platform platform;
 
@@ -90,8 +90,8 @@ public class Event {
     @Column(name = "status", nullable = false)
     private EventStatus status = EventStatus.DRAFT;
 
-    @ManyToMany
-    @JoinTable(name = "event_tag", joinColumns = @JoinColumn(name = "event_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "event_tags", joinColumns = @JoinColumn(name = "event_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<Tag> tags = new HashSet<>();
 
     @PrePersist
