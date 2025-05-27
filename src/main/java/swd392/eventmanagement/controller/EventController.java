@@ -12,8 +12,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.service.EventService;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/api/v1/events")
@@ -38,6 +40,14 @@ public class EventController {
     @ApiResponse(responseCode = "404", description = "Not Found - No registered events found for the user")
     public ResponseEntity<?> getUserRegisteredEvents() {
         return ResponseEntity.ok(eventService.getUserRegisteredEvents());
+    }
+
+    @GetMapping("/{eventId}")
+    @Operation(summary = "Get event details", description = "Returns detailed information about a specific event", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Event details retrieved successfully", content = @Content(schema = @Schema(implementation = EventDetailsDTO.class)))
+    @ApiResponse(responseCode = "404", description = "Not Found - Event with the specified ID does not exist")
+    public ResponseEntity<?> getEventDetails(@PathVariable Long eventId) {
+        return ResponseEntity.ok(eventService.getEventDetails(eventId));
     }
 
 }

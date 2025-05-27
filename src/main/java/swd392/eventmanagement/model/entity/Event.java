@@ -85,14 +85,14 @@ public class Event {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private EventStatus status = EventStatus.DRAFT;
-
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "event_tags", joinColumns = @JoinColumn(name = "event_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<Tag> tags = new HashSet<>();
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Image> images = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {
