@@ -3,6 +3,7 @@ package swd392.eventmanagement.service.impl;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import swd392.eventmanagement.config.properties.DomainAuthProperties;
@@ -42,6 +43,9 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final GoogleTokenVerifierService googleTokenVerifierService;
     private final DomainAuthProperties domainAuthProperties;
+
+    @Autowired
+    private UserDepartmentRoleMapper userDepartmentRoleMapper;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -91,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
 
         Set<UserDepartmentRoleDTO> userDepartmentRoles;
         if (user.getUserDepartmentRoles() != null) {
-            userDepartmentRoles = UserDepartmentRoleMapper.INSTANCE.toDTOSet(user.getUserDepartmentRoles());
+            userDepartmentRoles = userDepartmentRoleMapper.toDTOSet(user.getUserDepartmentRoles());
         } else {
             userDepartmentRoles = new HashSet<>(); // Empty set if no department roles exist
         }

@@ -14,6 +14,8 @@ import lombok.Data;
 import swd392.eventmanagement.exception.TokenRefreshException;
 import swd392.eventmanagement.exception.InvalidGoogleTokenException;
 import swd392.eventmanagement.exception.UnauthorizedDomainException;
+import swd392.eventmanagement.exception.EventNotFoundException;
+import swd392.eventmanagement.exception.EventProcessingException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -114,6 +116,28 @@ public class GlobalExceptionHandler {
                                 ex.getMessage(),
                                 request.getDescription(false));
                 return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+        }
+
+        @ExceptionHandler(EventNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleEventNotFoundException(EventNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(EventProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleEventProcessingException(EventProcessingException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         // Error response class
