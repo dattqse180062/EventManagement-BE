@@ -4,6 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.enums.TargetAudience;
 import swd392.eventmanagement.model.entity.Department;
@@ -13,6 +15,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
+    @Query("SELECT e FROM Event e JOIN Registration r ON e.id = r.event.id WHERE r.user.id = :userId")
+    List<Event> findEventsByUserId(@Param("userId") Long userId);
+
     List<Event> findByDepartment(Department department);
 
     List<Event> findByStatus(EventStatus status);
