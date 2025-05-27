@@ -6,4 +6,6 @@ import swd392.eventmanagement.model.dto.response.EventListDTO;
 
 public interface EventService {
     List<EventListDTO> getAvailableEvents();
+
+    List<EventListDTO> getUserRegisteredEvents();
 }

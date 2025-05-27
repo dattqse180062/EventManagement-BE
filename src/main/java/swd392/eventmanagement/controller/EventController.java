@@ -31,4 +31,13 @@ public class EventController {
         return ResponseEntity.ok(eventService.getAvailableEvents());
     }
 
+    @GetMapping("/registered")
+    @Operation(summary = "Get user's registered events", description = "Returns a list of events that the current authenticated user has registered for", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "User's registered events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListDTO.class)))
+    @ApiResponse(responseCode = "401", description = "Unauthorized - User is not authenticated")
+    @ApiResponse(responseCode = "404", description = "Not Found - No registered events found for the user")
+    public ResponseEntity<?> getUserRegisteredEvents() {
+        return ResponseEntity.ok(eventService.getUserRegisteredEvents());
+    }
+
 }
