@@ -17,7 +17,6 @@ import swd392.eventmanagement.model.dto.response.UserDepartmentRoleDTO;
 import swd392.eventmanagement.model.entity.RefreshToken;
 import swd392.eventmanagement.model.entity.Role;
 import swd392.eventmanagement.model.entity.User;
-import swd392.eventmanagement.model.entity.UserDepartmentRole;
 import swd392.eventmanagement.model.mapper.UserDepartmentRoleMapper;
 import swd392.eventmanagement.repository.RoleRepository;
 import swd392.eventmanagement.repository.UserRepository;
@@ -44,9 +43,6 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final GoogleTokenVerifierService googleTokenVerifierService;
     private final DomainAuthProperties domainAuthProperties;
-
-    @Autowired
-    private UserDepartmentRoleMapper userDepartmentRoleMapper;
 
     public AuthServiceImpl(
             UserRepository userRepository,
