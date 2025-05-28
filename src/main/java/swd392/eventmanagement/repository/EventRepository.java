@@ -13,10 +13,13 @@ import swd392.eventmanagement.model.entity.Event;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e JOIN Registration r ON e.id = r.event.id WHERE r.user.id = :userId")
     List<Event> findEventsByUserId(@Param("userId") Long userId);
+
+    Optional<Event> findById(Long id);
 
     List<Event> findByDepartment(Department department);
 
