@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
-import swd392.eventmanagement.model.dto.response.DepartmentResponse;
 import swd392.eventmanagement.service.impl.DepartmentServiceImpl;
 
 import java.util.Map;
@@ -17,6 +16,7 @@ import java.util.Map;
 @RequestMapping("/api/departments")
 @RequiredArgsConstructor
 public class DepartmentController {
+
     private final DepartmentServiceImpl departmentService;
 
     @PostMapping("/create")
