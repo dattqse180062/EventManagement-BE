@@ -9,6 +9,7 @@ import org.mapstruct.factory.Mappers;
 
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
+import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.entity.Event;
 import swd392.eventmanagement.model.entity.EventType;
@@ -24,6 +25,12 @@ public interface EventMapper {
     @Mapping(target = "locationAddress2", source = "location", qualifiedByName = "locationToAddress2")
     @Mapping(target = "tags", source = "tags")
     EventListDTO toDTO(Event event);
+
+    @Mapping(target = "typeName", source = "type", qualifiedByName = "eventTypeToName")
+    @Mapping(target = "locationAddress", source = "location", qualifiedByName = "locationToAddress")
+    EventListManagementDTO toEventListManagementDTO(Event event);
+
+    List<EventListManagementDTO> toEventListManagementDTOList(List<Event> events);
 
     List<EventListDTO> toDTOList(List<Event> events);
 

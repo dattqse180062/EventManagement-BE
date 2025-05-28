@@ -7,11 +7,14 @@ import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
+import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
 
 public interface EventService {
     List<EventListDTO> getAvailableEvents();
 
     List<EventListDTO> getUserRegisteredEvents();
+
+    List<EventListManagementDTO> getEventsForManagement(String departmentCode);
 
     EventDetailsDTO getEventDetails(Long eventId);
 
