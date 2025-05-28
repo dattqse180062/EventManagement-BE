@@ -7,7 +7,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.Data;
@@ -16,6 +15,10 @@ import swd392.eventmanagement.exception.InvalidGoogleTokenException;
 import swd392.eventmanagement.exception.UnauthorizedDomainException;
 import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.EventProcessingException;
+import swd392.eventmanagement.exception.UserProcessingException;
+import swd392.eventmanagement.exception.UserNotFoundException;
+import swd392.eventmanagement.exception.AccessDeniedException;
+import swd392.eventmanagement.exception.ValidationException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -75,16 +78,26 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
 
-        @ExceptionHandler(UsernameNotFoundException.class)
-        public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(UsernameNotFoundException ex,
-                        WebRequest request) {
+        @ExceptionHandler(ValidationException.class)
+        public ResponseEntity<ErrorResponse> handleValidationException(
+                        ValidationException ex, WebRequest request) {
+
+                String errorMessage = ex.getMessage();
+                if (!ex.getErrors().isEmpty()) {
+                        errorMessage += ": " + ex.getErrors().entrySet().stream()
+                                        .map(entry -> entry.getKey() + ": " + entry.getValue())
+                                        .collect(Collectors.joining(", "));
+                }
+
                 ErrorResponse errorResponse = new ErrorResponse(
-                                HttpStatus.NOT_FOUND.value(),
+                                HttpStatus.BAD_REQUEST.value(),
                                 LocalDateTime.now(),
-                                ex.getMessage(),
+                                errorMessage,
                                 request.getDescription(false));
-                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
+
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }// UsernameNotFoundException handler removed as we're now using
+         // UserNotFoundException
 
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
@@ -118,6 +131,17 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
         }
 
+        @ExceptionHandler(AccessDeniedException.class)
+        public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.FORBIDDEN.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+        }
+
         @ExceptionHandler(EventNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleEventNotFoundException(EventNotFoundException ex,
                         WebRequest request) {
@@ -129,8 +153,30 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
         }
 
+        @ExceptionHandler(UserNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
         @ExceptionHandler(EventProcessingException.class)
         public ResponseEntity<ErrorResponse> handleEventProcessingException(EventProcessingException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(UserProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleUserProcessingException(UserProcessingException ex,
                         WebRequest request) {
                 ErrorResponse errorResponse = new ErrorResponse(
                                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
