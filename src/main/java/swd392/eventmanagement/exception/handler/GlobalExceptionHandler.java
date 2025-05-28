@@ -20,7 +20,6 @@ import swd392.eventmanagement.exception.UserNotFoundException;
 import swd392.eventmanagement.exception.AccessDeniedException;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.ValidationException;
-import swd392.eventmanagement.exception.DepartmentNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

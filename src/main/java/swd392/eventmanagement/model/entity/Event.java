@@ -36,8 +36,8 @@ public class Event {
     @JoinColumn(name = "type_id", nullable = false)
     private EventType type;
 
+    @Column(name = "audience", nullable = false, columnDefinition = "target_audience")
     @Enumerated(EnumType.STRING)
-    @Column(name = "audience", nullable = false)
     private TargetAudience audience = TargetAudience.BOTH;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -72,8 +72,8 @@ public class Event {
     @JoinColumn(name = "survey_id")
     private Survey survey;
 
+    @Column(name = "mode", nullable = false, columnDefinition = "event_mode")
     @Enumerated(EnumType.STRING)
-    @Column(name = "mode", nullable = false)
     private EventMode mode;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -85,12 +85,15 @@ public class Event {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "status", nullable = false, columnDefinition = "event_status")
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
     private EventStatus status = EventStatus.DRAFT;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "event_tags", joinColumns = @JoinColumn(name = "event_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<Tag> tags = new HashSet<>();
+
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Image> images = new HashSet<>();
 
