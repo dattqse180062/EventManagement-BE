@@ -1,9 +1,11 @@
 package swd392.eventmanagement.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,10 +14,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import swd392.eventmanagement.enums.EventMode;
+import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.service.EventService;
 import org.springframework.web.bind.annotation.PathVariable;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/events")
@@ -50,4 +57,20 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventDetails(eventId));
     }
 
+    @GetMapping("/search")
+    @Operation(summary = "Search and filter events", description = "Search events by name and filter by tag, type, status, time, mode, department", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListDTO.class)))
+    @ApiResponse(responseCode = "404", description = "Not Found - No events found matching the search criteria")
+    public ResponseEntity<?> searchEvents(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) List<Long> tagIds,
+            @RequestParam(required = false) Long typeId,
+            @RequestParam(required = false) EventStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            @RequestParam(required = false) EventMode mode,
+            @RequestParam(required = false) Long departmentId) {
+        return ResponseEntity.ok(eventService.searchEvents(
+                name, tagIds, typeId, status, from, to, mode, departmentId));
+    }
 }

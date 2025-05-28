@@ -1,17 +1,19 @@
 package swd392.eventmanagement.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import swd392.eventmanagement.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import swd392.eventmanagement.security.service.UserDetailsImpl;
 
+import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.EventProcessingException;
@@ -22,23 +24,28 @@ import swd392.eventmanagement.model.entity.EventCapacity;
 import swd392.eventmanagement.model.mapper.EventMapper;
 import swd392.eventmanagement.repository.EventCapacityRepository;
 import swd392.eventmanagement.repository.EventRepository;
+import swd392.eventmanagement.repository.EventSpecification;
 import swd392.eventmanagement.repository.RegistrationRepository;
 import swd392.eventmanagement.service.EventService;
 
 @Service
 public class EventServiceImpl implements EventService {
     private static final Logger logger = LoggerFactory.getLogger(EventServiceImpl.class);
-    @Autowired
-    private EventRepository eventRepository;
+    private final EventRepository eventRepository;
+    private final EventMapper eventMapper;
+    private final RegistrationRepository registrationRepository;
+    private final EventCapacityRepository eventCapacityRepository;
 
-    @Autowired
-    private EventMapper eventMapper;
-
-    @Autowired
-    private RegistrationRepository registrationRepository;
-
-    @Autowired
-    private EventCapacityRepository eventCapacityRepository;
+    public EventServiceImpl(
+            EventRepository eventRepository,
+            EventMapper eventMapper,
+            RegistrationRepository registrationRepository,
+            EventCapacityRepository eventCapacityRepository) {
+        this.eventRepository = eventRepository;
+        this.eventMapper = eventMapper;
+        this.registrationRepository = registrationRepository;
+        this.eventCapacityRepository = eventCapacityRepository;
+    }
 
     @Override
     public List<EventListDTO> getAvailableEvents() {
@@ -61,9 +68,8 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<EventListDTO> getUserRegisteredEvents() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            throw new UsernameNotFoundException("User not authenticated");
+            throw new UserNotFoundException("User not authenticated");
         }
 
         Long userId = ((UserDetailsImpl) auth.getPrincipal()).getId();
@@ -147,6 +153,43 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             logger.error("Error retrieving details for event with ID: {}", eventId, e);
             throw new EventProcessingException("Failed to retrieve event details", e);
+        }
+    }
+
+    @Override
+    public List<EventListDTO> searchEvents(
+            String name,
+            List<Long> tagIds,
+            Long typeId,
+            EventStatus status,
+            LocalDateTime from,
+            LocalDateTime to,
+            EventMode mode,
+            Long departmentId) {
+        try {
+            Specification<Event> spec = EventSpecification.filter(
+                    name,
+                    tagIds,
+                    typeId,
+                    status,
+                    from,
+                    to, mode,
+                    departmentId != null && departmentId > 0 ? departmentId : null);
+            List<Event> events = eventRepository.findAll(spec);
+            if (events.isEmpty()) {
+                logger.info("No events found matching search criteria");
+                throw new EventNotFoundException("No events found matching the search criteria");
+            }
+
+            logger.info("Found {} events matching search criteria", events.size());
+            return eventMapper.toDTOList(events);
+        } catch (EventNotFoundException e) {
+            // Rethrow EventNotFoundException to be handled by the global exception handler
+            // This ensures HTTP 404 response instead of HTTP 500
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error searching events", e);
+            throw new EventProcessingException("Failed to search events", e);
         }
     }
 }
