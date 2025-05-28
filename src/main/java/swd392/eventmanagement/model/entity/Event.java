@@ -36,7 +36,7 @@ public class Event {
     @JoinColumn(name = "type_id", nullable = false)
     private EventType type;
 
-    @Column(name = "audience", nullable = false, columnDefinition = "target_audience")
+    @Column(name = "audience", nullable = false)
     @Enumerated(EnumType.STRING)
     private TargetAudience audience = TargetAudience.BOTH;
 
@@ -72,7 +72,7 @@ public class Event {
     @JoinColumn(name = "survey_id")
     private Survey survey;
 
-    @Column(name = "mode", nullable = false, columnDefinition = "event_mode")
+    @Column(name = "mode", nullable = false)
     @Enumerated(EnumType.STRING)
     private EventMode mode;
 
@@ -86,7 +86,7 @@ public class Event {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "status", nullable = false, columnDefinition = "event_status")
+    @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private EventStatus status = EventStatus.DRAFT;
 
