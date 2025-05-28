@@ -18,7 +18,9 @@ import swd392.eventmanagement.exception.EventProcessingException;
 import swd392.eventmanagement.exception.UserProcessingException;
 import swd392.eventmanagement.exception.UserNotFoundException;
 import swd392.eventmanagement.exception.AccessDeniedException;
+import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.ValidationException;
+import swd392.eventmanagement.exception.DepartmentNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -144,6 +146,17 @@ public class GlobalExceptionHandler {
 
         @ExceptionHandler(EventNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleEventNotFoundException(EventNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(DepartmentNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleDepartmentNotFoundException(DepartmentNotFoundException ex,
                         WebRequest request) {
                 ErrorResponse errorResponse = new ErrorResponse(
                                 HttpStatus.NOT_FOUND.value(),

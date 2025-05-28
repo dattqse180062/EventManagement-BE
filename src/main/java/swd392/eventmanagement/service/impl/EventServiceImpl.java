@@ -6,7 +6,6 @@ import java.util.List;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import swd392.eventmanagement.exception.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,17 +14,28 @@ import swd392.eventmanagement.security.service.UserDetailsImpl;
 
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.exception.AccessDeniedException;
+import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.EventProcessingException;
+import swd392.eventmanagement.exception.UserNotFoundException;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
+import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.model.entity.Department;
+import swd392.eventmanagement.model.entity.DepartmentRole;
+import swd392.eventmanagement.model.entity.User;
 import swd392.eventmanagement.model.entity.Event;
 import swd392.eventmanagement.model.entity.EventCapacity;
 import swd392.eventmanagement.model.mapper.EventMapper;
+import swd392.eventmanagement.repository.DepartmentRepository;
 import swd392.eventmanagement.repository.EventCapacityRepository;
 import swd392.eventmanagement.repository.EventRepository;
 import swd392.eventmanagement.repository.EventSpecification;
 import swd392.eventmanagement.repository.RegistrationRepository;
+import swd392.eventmanagement.repository.UserDepartmentRoleRepository;
+import swd392.eventmanagement.repository.DepartmentRoleRepository;
+import swd392.eventmanagement.repository.UserRepository;
 import swd392.eventmanagement.service.EventService;
 
 @Service
@@ -35,16 +45,68 @@ public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
     private final RegistrationRepository registrationRepository;
     private final EventCapacityRepository eventCapacityRepository;
+    private final DepartmentRepository departmentRepository;
+    private final UserDepartmentRoleRepository userDepartmentRoleRepository;
+    private final DepartmentRoleRepository departmentRoleRepository;
+    private final UserRepository userRepository;
 
     public EventServiceImpl(
             EventRepository eventRepository,
             EventMapper eventMapper,
             RegistrationRepository registrationRepository,
-            EventCapacityRepository eventCapacityRepository) {
+            EventCapacityRepository eventCapacityRepository,
+            DepartmentRepository departmentRepository,
+            UserDepartmentRoleRepository userDepartmentRoleRepository,
+            DepartmentRoleRepository departmentRoleRepository,
+            UserRepository userRepository) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.registrationRepository = registrationRepository;
         this.eventCapacityRepository = eventCapacityRepository;
+        this.departmentRepository = departmentRepository;
+        this.userDepartmentRoleRepository = userDepartmentRoleRepository;
+        this.departmentRoleRepository = departmentRoleRepository;
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public List<EventListManagementDTO> getEventsForManagement(String departmentCode) {
+        logger.info("Getting events for management for department code: {}", departmentCode);
+        try {
+            // Find the department by code
+            Department department = departmentRepository.findByCode(departmentCode)
+                    .orElseThrow(
+                            () -> new DepartmentNotFoundException("No department found with code: " + departmentCode));
+
+            // Check if the current user is the HEAD of the department
+            if (!isHeadOfDepartment(department)) {
+                logger.warn("Unauthorized access attempt to department events by non-HEAD user for department: {}",
+                        departmentCode);
+                throw new AccessDeniedException(
+                        "Access denied. Only department HEAD can access management events for department: "
+                                + departmentCode);
+            }
+
+            // Get all events for this department
+            List<Event> events = eventRepository.findByDepartment(department);
+
+            if (events.isEmpty()) {
+                logger.info("No events found for department with code: {}", departmentCode);
+                throw new EventNotFoundException("No events found for department with code: " + departmentCode);
+            }
+
+            // Use EventMapper to map to DTOs
+            List<EventListManagementDTO> eventDTOs = eventMapper.toEventListManagementDTOList(events);
+
+            logger.info("Found {} events for department with code: {}", eventDTOs.size(), departmentCode);
+            return eventDTOs;
+        } catch (DepartmentNotFoundException | EventNotFoundException | AccessDeniedException e) {
+            // Just rethrow exceptions without additional logging
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving events for department with code: {}", departmentCode, e);
+            throw new EventProcessingException("Failed to retrieve events for management", e);
+        }
     }
 
     @Override
@@ -190,6 +252,43 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             logger.error("Error searching events", e);
             throw new EventProcessingException("Failed to search events", e);
+        }
+    }
+
+    /**
+     * Checks if the current authenticated user is the HEAD of the specified
+     * department.
+     * 
+     * @param department The department to check
+     * @return true if the user is the HEAD of the department, false otherwise
+     */
+    private boolean isHeadOfDepartment(Department department) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            logger.warn("No authenticated user found when checking for department HEAD role");
+            return false;
+        }
+
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long userId = userDetails.getId();
+
+        try {
+            // Get the user entity
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+            // Find the HEAD role
+            DepartmentRole headRole = departmentRoleRepository.findByName("HEAD")
+                    .orElseThrow(() -> new RuntimeException("Department role 'HEAD' not found"));
+
+            // Check if the user has the HEAD role in the specific department
+            return userDepartmentRoleRepository.findByUserAndDepartmentAndDepartmentRole(user, department, headRole)
+                    .isPresent();
+
+        } catch (Exception e) {
+            logger.error("Error checking if user is HEAD of department: {}", department.getCode(), e);
+            return false;
         }
     }
 }
