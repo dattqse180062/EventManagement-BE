@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
+import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.service.EventService;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,5 +84,15 @@ public class EventController {
     @ApiResponse(responseCode = "404", description = "Not Found - No events found for the specified department")
     public ResponseEntity<?> getEventsForManagement(@PathVariable String departmentCode) {
         return ResponseEntity.ok(eventService.getEventsForManagement(departmentCode));
+    }
+
+    @GetMapping("/management/{departmentCode}/event/{eventId}")
+    @Operation(summary = "Get event details for management", description = "Returns detailed information about a specific event for management", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Event details for management retrieved successfully", content = @Content(schema = @Schema(implementation = EventDetailsManagementDTO.class)))
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - No events found for the specified department")
+    public ResponseEntity<?> getEventDetailsForManagement(@PathVariable String departmentCode,
+            @PathVariable Long eventId) {
+        return ResponseEntity.ok(eventService.getEventDetailsForManagement(departmentCode, eventId));
     }
 }

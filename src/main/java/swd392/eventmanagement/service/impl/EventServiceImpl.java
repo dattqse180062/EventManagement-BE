@@ -20,6 +20,7 @@ import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.EventProcessingException;
 import swd392.eventmanagement.exception.UserNotFoundException;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
+import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
 import swd392.eventmanagement.model.entity.Department;
@@ -215,6 +216,76 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             logger.error("Error retrieving details for event with ID: {}", eventId, e);
             throw new EventProcessingException("Failed to retrieve event details", e);
+        }
+    }
+
+    @Override
+    public EventDetailsManagementDTO getEventDetailsForManagement(String departmentCode, Long eventId) {
+        logger.info("Getting event details for management for department code: {} and event ID: {}", departmentCode,
+                eventId);
+        try {
+            if (eventId == null) {
+                throw new IllegalArgumentException("Event ID cannot be null");
+            }
+
+            if (departmentCode == null || departmentCode.trim().isEmpty()) {
+                throw new IllegalArgumentException("Department code cannot be null or empty");
+            }
+
+            // Find the department by code
+            Department department = departmentRepository.findByCode(departmentCode)
+                    .orElseThrow(
+                            () -> new DepartmentNotFoundException("No department found with code: " + departmentCode));
+
+            // Fetch event by ID
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
+            if (!event.getDepartment().getId().equals(department.getId())) {
+                logger.warn("Event with ID: {} does not belong to department with code: {}", eventId, departmentCode);
+                throw new AccessDeniedException(
+                        "Access denied. Event with ID: " + eventId + " does not belong to department: "
+                                + departmentCode);
+            }
+
+            // Check if the current user is authorized to view this event's management
+            // details
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+                logger.warn("Unauthorized access attempt to event management details for event ID: {}", eventId);
+                throw new AccessDeniedException("Access denied. Authentication required.");
+            }
+
+            // Verify user is the HEAD of the department
+            if (!isHeadOfDepartment(department)) {
+                logger.warn(
+                        "Unauthorized access attempt to event management details by non-HEAD user for department: {} and event ID: {}",
+                        departmentCode, eventId);
+                throw new AccessDeniedException("Access denied. Only department HEAD can access management details.");
+            }
+
+            // Map the event entity to EventDetailsManagement DTO
+            EventDetailsManagementDTO eventDetailsManagement = eventMapper.toEventDetailsManagement(event);
+
+            // Get capacities for student and lecturer roles
+            for (EventCapacity capacity : eventCapacityRepository.findByEvent(event)) {
+                String roleName = capacity.getRole().getName();
+                if ("ROLE_STUDENT".equals(roleName)) {
+                    eventDetailsManagement.setMaxCapacityStudent(capacity.getCapacity());
+                } else if ("ROLE_LECTURER".equals(roleName)) {
+                    eventDetailsManagement.setMaxCapacityLecturer(capacity.getCapacity());
+                }
+            }
+
+            logger.info("Successfully retrieved event management details for department: {} and event ID: {}",
+                    departmentCode, eventId);
+            return eventDetailsManagement;
+        } catch (EventNotFoundException | AccessDeniedException | DepartmentNotFoundException e) {
+            // Just rethrow exceptions without additional logging
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving management details for department: {} and event ID: {}", departmentCode,
+                    eventId, e);
+            throw new EventProcessingException("Failed to retrieve event management details", e);
         }
     }
 

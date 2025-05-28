@@ -6,6 +6,7 @@ import java.util.List;
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
+import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
 
@@ -17,6 +18,8 @@ public interface EventService {
     List<EventListManagementDTO> getEventsForManagement(String departmentCode);
 
     EventDetailsDTO getEventDetails(Long eventId);
+
+    EventDetailsManagementDTO getEventDetailsForManagement(String departmentCode, Long eventId);
 
     List<EventListDTO> searchEvents(
             String name,
