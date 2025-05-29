@@ -9,11 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
 import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 import swd392.eventmanagement.service.impl.DepartmentServiceImpl;
@@ -42,5 +38,28 @@ public class DepartmentController {
     @ApiResponse(responseCode = "404", description = "Not Found - No departments found in the system")
     public ResponseEntity<?> getAllDepartments() {
         return ResponseEntity.ok(departmentService.getAllDepartments());
+    }
+
+    @PutMapping("/update/{id}")
+    @Operation(
+            summary = "Update department",
+            description = "Cập nhật thông tin phòng ban",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Cập nhật phòng ban thành công",
+            content = @Content(schema = @Schema(implementation = Map.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Không tìm thấy phòng ban"
+    )
+    public ResponseEntity<Map<String, String>> updateDepartment(
+            @PathVariable Long id,
+            @RequestBody DepartmentRequest request
+    ) {
+        departmentService.updateDepartment(id, request);
+        return ResponseEntity.ok(Map.of("message", "Cập nhật phòng ban thành công"));
     }
 }
