@@ -108,6 +108,8 @@ public class EventBuilder {
         // Required fields (validated in validateEventUpdateRequest)
         event.setName(request.getName());
         event.setDescription(request.getDescription());
+        event.setMode(request.getMode());
+        event.setAudience(request.getAudience());
 
         // Event type
         EventType eventType = eventTypeRepository.findById(request.getTypeId())

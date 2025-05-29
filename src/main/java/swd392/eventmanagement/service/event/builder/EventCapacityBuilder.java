@@ -56,10 +56,8 @@ public class EventCapacityBuilder {
         List<EventCapacity> existingCapacities = eventCapacityRepository.findByEvent(event);
         eventCapacityRepository.deleteAll(existingCapacities);
 
-        // Create new capacities based on audience
-        TargetAudience audience = event.getAudience();
-        Integer maxCapacity = event.getMaxCapacity();
-        createEventCapacities(event, roleCapacities, audience, maxCapacity);
+        // Create new capacities based on audience and provided role capacities
+        createEventCapacities(event, roleCapacities, event.getAudience(), event.getMaxCapacity());
     }
 
     /**
@@ -89,9 +87,12 @@ public class EventCapacityBuilder {
                         .orElseThrow(() -> new EventRequestValidationException("Lecturer role not found"));
                 createSingleCapacity(event, lecturerRole, maxCapacity);
             }
-            // For TargetAudience.BOTH, we require explicit capacities
-        } else {
-            // Create capacities as specified
+            return; // Don't continue to create explicit capacities since we've handled the default
+                    // case
+        }
+
+        // Handle explicit role capacities if provided
+        if (roleCapacities != null && !roleCapacities.isEmpty()) {
             createEventCapacities(event, roleCapacities);
         }
     }
