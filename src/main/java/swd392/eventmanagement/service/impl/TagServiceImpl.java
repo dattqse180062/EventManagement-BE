@@ -61,4 +61,14 @@ public class TagServiceImpl implements TagService {
             throw new TagProcessingException("Failed to retrieve active tags", e);
         }
     }
+
+    @Override
+    public void updateTag(Long id, TagRequest request) {
+        Tag tag = tagRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tag không tồn tại"));
+        tag.setName(request.getName());
+        tag.setDescription(request.getDescription());
+        tagRepository.save(tag);
+    }
+
 }

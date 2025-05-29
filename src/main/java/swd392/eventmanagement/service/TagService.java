@@ -8,5 +8,7 @@ import swd392.eventmanagement.model.dto.response.TagShowDTO;
 public interface TagService {
     void createTag(TagRequest request);
 
+    void updateTag(Long id, TagRequest request);
+
     List<TagShowDTO> getActiveTags();
 }
