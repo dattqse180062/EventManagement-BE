@@ -1,0 +1,16 @@
+package swd392.eventmanagement.model.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class DepartmentShowDTO {
+    private Long id;
+    private String code;
+    private String name;
+}

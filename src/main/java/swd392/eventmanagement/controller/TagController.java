@@ -5,44 +5,45 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import swd392.eventmanagement.model.dto.request.TagRequest;
+import swd392.eventmanagement.model.dto.response.TagShowDTO;
 import swd392.eventmanagement.service.impl.TagServiceImpl;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/tags")
+@RequestMapping("/api/v1/tags")
 @RequiredArgsConstructor
-
+@Tag(name = "Tag", description = "Tag API")
 public class TagController {
 
-    private final TagServiceImpl tagService;
+        private final TagServiceImpl tagService;
 
-    @PostMapping("/create")
-    @Operation(
-            summary = "Create new tag",
-            description = "Tạo một thẻ mới trong hệ thống",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @ApiResponse(
-            responseCode = "201",
-            description = "Tạo tag thành công",
-            content = @Content(schema = @Schema(implementation = Map.class))
-    )
-    @ApiResponse(
-            responseCode = "400",
-            description = "Dữ liệu không hợp lệ hoặc tag đã tồn tại"
-    )
-    public ResponseEntity<Map<String, String>> createTag(@RequestBody TagRequest request) {
-        tagService.createTag(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "Tạo tag thành công"));
-    }
+        @PostMapping("/create")
+        @Operation(summary = "Create new tag", description = "Tạo một thẻ mới trong hệ thống", security = @SecurityRequirement(name = "bearerAuth"))
+        @ApiResponse(responseCode = "201", description = "Tạo tag thành công", content = @Content(schema = @Schema(implementation = Map.class)))
+        @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ hoặc tag đã tồn tại")
+        public ResponseEntity<Map<String, String>> createTag(@RequestBody TagRequest request) {
+                tagService.createTag(request);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(Map.of("message", "Tạo tag thành công"));
+        }
+
+        @GetMapping("/active")
+        @Operation(summary = "Get all active tags", description = "Returns a list of all active tags")
+        @ApiResponse(responseCode = "200", description = "Active tags retrieved successfully", content = @Content(schema = @Schema(implementation = TagShowDTO.class)))
+        @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+        @ApiResponse(responseCode = "404", description = "No active tags found in the system")
+        public ResponseEntity<?> getActiveTags() {
+                return ResponseEntity.ok(tagService.getActiveTags());
+        }
 }
