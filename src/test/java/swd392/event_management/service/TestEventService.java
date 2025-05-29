@@ -31,7 +31,7 @@ import swd392.eventmanagement.repository.EventCapacityRepository;
 import swd392.eventmanagement.repository.EventRepository;
 import swd392.eventmanagement.repository.RegistrationRepository;
 import swd392.eventmanagement.security.service.UserDetailsImpl;
-import swd392.eventmanagement.service.impl.EventServiceImpl;
+import swd392.eventmanagement.service.event.impl.EventServiceImpl;
 
 public class TestEventService {
 

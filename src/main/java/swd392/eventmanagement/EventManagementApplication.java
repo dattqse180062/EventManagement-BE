@@ -9,9 +9,9 @@ import swd392.eventmanagement.config.properties.DomainAuthProperties;
 
 @SpringBootApplication
 @EnableConfigurationProperties({
-    JwtProperties.class,
-    CorsProperties.class,
-    DomainAuthProperties.class
+        JwtProperties.class,
+        CorsProperties.class,
+        DomainAuthProperties.class
 })
 public class EventManagementApplication {
     public static void main(String[] args) {
