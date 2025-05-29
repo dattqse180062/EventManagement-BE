@@ -19,6 +19,11 @@ import swd392.eventmanagement.exception.UserProcessingException;
 import swd392.eventmanagement.exception.UserNotFoundException;
 import swd392.eventmanagement.exception.AccessDeniedException;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
+import swd392.eventmanagement.exception.DepartmentProcessingException;
+import swd392.eventmanagement.exception.EventTypeNotFoundException;
+import swd392.eventmanagement.exception.EventTypeProcessingException;
+import swd392.eventmanagement.exception.TagNotFoundException;
+import swd392.eventmanagement.exception.TagProcessingException;
 import swd392.eventmanagement.exception.ValidationException;
 
 import java.time.LocalDateTime;
@@ -189,6 +194,61 @@ public class GlobalExceptionHandler {
 
         @ExceptionHandler(UserProcessingException.class)
         public ResponseEntity<ErrorResponse> handleUserProcessingException(UserProcessingException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(DepartmentProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleDepartmentProcessingException(DepartmentProcessingException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(EventTypeNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleEventTypeNotFoundException(EventTypeNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(EventTypeProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleEventTypeProcessingException(EventTypeProcessingException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(TagNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleTagNotFoundException(TagNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(TagProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleTagProcessingException(TagProcessingException ex,
                         WebRequest request) {
                 ErrorResponse errorResponse = new ErrorResponse(
                                 HttpStatus.INTERNAL_SERVER_ERROR.value(),

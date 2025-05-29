@@ -1,17 +1,25 @@
 package swd392.eventmanagement.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import swd392.eventmanagement.exception.DepartmentNotFoundException;
+import swd392.eventmanagement.exception.DepartmentProcessingException;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
+import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.mapper.DepartmentMapper;
 import swd392.eventmanagement.repository.DepartmentRepository;
 import swd392.eventmanagement.service.DepartmentService;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class DepartmentServiceImpl implements DepartmentService {
 
+    private static final Logger logger = LoggerFactory.getLogger(DepartmentServiceImpl.class);
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
 
@@ -26,5 +34,28 @@ public class DepartmentServiceImpl implements DepartmentService {
 
         Department department = departmentMapper.toEntity(requestDTO);
         departmentRepository.save(department);
+    }
+
+    @Override
+    public List<DepartmentShowDTO> getAllDepartments() {
+        logger.info("Getting all departments");
+        try {
+            List<Department> departments = departmentRepository.findAll();
+
+            if (departments.isEmpty()) {
+                logger.info("No departments found");
+                throw new DepartmentNotFoundException("No departments found in the system");
+            }
+
+            logger.info("Found {} departments", departments.size());
+            return departmentMapper.toDepartmentShowDTOList(departments);
+        } catch (DepartmentNotFoundException e) {
+            // Just rethrow DepartmentNotFoundException to be handled by the global
+            // exception handler
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving departments", e);
+            throw new DepartmentProcessingException("Failed to retrieve departments", e);
+        }
     }
 }
