@@ -29,6 +29,9 @@ public class EventListManagementDTO {
 
     private EventMode mode;
 
+    private String posterUrl;
+    private String bannerUrl;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
