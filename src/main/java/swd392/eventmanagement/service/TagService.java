@@ -11,4 +11,6 @@ public interface TagService {
     void updateTag(Long id, TagRequest request);
 
     List<TagShowDTO> getActiveTags();
+
+    void deleteTag(Long tagId);
 }

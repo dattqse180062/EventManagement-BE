@@ -63,6 +63,14 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    public void deleteTag(Long tagId) {
+        Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new TagNotFoundException("Không tìm thấy tag " ));
+        tag.setIsActive(false);
+        tagRepository.save(tag);
+    }
+
+    @Override
     public void updateTag(Long id, TagRequest request) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tag không tồn tại"));

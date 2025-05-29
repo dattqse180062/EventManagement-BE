@@ -60,4 +60,19 @@ public class TagController {
                 return ResponseEntity.ok(Map.of("message", "Cập nhật tag thành công"));
         }
 
+        @PutMapping("disable/{id}")
+        @Operation(summary = "Disable tag (soft delete)",description = "Đặt isActive = false để vô hiệu hóa tag",security = @SecurityRequirement(name ="bearerAuth"))
+        @ApiResponse(responseCode = "200",description = "Vô hiệu hóa tag thành công",content = @Content(schema = @Schema(implementation = Map.class)))
+        @ApiResponse(responseCode = "404",description = "Không tìm thấy tag")
+        public ResponseEntity<Map<String,String>> disableTag(@PathVariable Long id){
+               tagService.deleteTag(id); // Hàm gắn isActive = false
+               return ResponseEntity.ok(Map.of("message","Vô hiệu hóa thành công"));
+        }
+
+
+
 }
+
+
+
+

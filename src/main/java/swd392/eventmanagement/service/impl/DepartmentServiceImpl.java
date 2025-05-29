@@ -58,4 +58,17 @@ public class DepartmentServiceImpl implements DepartmentService {
             throw new DepartmentProcessingException("Failed to retrieve departments", e);
         }
     }
+
+    @Override
+    public void updateDepartment(Long id, DepartmentRequest request) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new DepartmentNotFoundException("Không tìm thấy phòng ban với ID = " + id));
+
+        department.setName(request.getName());
+        department.setCode(request.getCode());
+        department.setAvatarUrl(request.getAvatarUrl());
+        department.setBannerUrl(request.getBannerUrl());
+
+        departmentRepository.save(department);
+    }
 }
