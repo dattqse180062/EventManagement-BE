@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,8 +27,9 @@ import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.service.event.EventService;
 import swd392.eventmanagement.model.dto.request.EventCreateRequest;
-import swd392.eventmanagement.service.EventService;
+import swd392.eventmanagement.model.dto.request.EventUpdateRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -114,5 +116,18 @@ public class EventController {
             @Valid @RequestBody EventCreateRequest eventCreateRequest) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(eventService.createNewEvent(eventCreateRequest, departmentCode));
+    }
+
+    @PutMapping("/management/{departmentCode}/event/{eventId}")
+    @Operation(summary = "Update existing event", description = "Updates an existing event in the specified department", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Event updated successfully", content = @Content(schema = @Schema(implementation = EventDetailsManagementDTO.class)))
+    @ApiResponse(responseCode = "400", description = "Bad Request - Invalid event data supplied")
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - Event not found")
+    public ResponseEntity<?> updateEvent(
+            @PathVariable String departmentCode,
+            @PathVariable Long eventId,
+            @Valid @RequestBody EventUpdateRequest eventUpdateRequest) {
+        return ResponseEntity.ok(eventService.updateEvent(eventId, eventUpdateRequest, departmentCode));
     }
 }

@@ -14,7 +14,7 @@ import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.TargetAudience;
 
 @Data
-public class EventCreateRequest {
+public class EventUpdateRequest {
     @NotBlank(message = "Event name cannot be null or empty")
     @Size(max = 255, message = "Event name cannot exceed 255 characters")
     private String name;
