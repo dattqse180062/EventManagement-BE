@@ -15,6 +15,7 @@ import swd392.eventmanagement.exception.InvalidGoogleTokenException;
 import swd392.eventmanagement.exception.UnauthorizedDomainException;
 import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.EventProcessingException;
+import swd392.eventmanagement.exception.EventRequestValidationException;
 import swd392.eventmanagement.exception.UserProcessingException;
 import swd392.eventmanagement.exception.UserNotFoundException;
 import swd392.eventmanagement.exception.AccessDeniedException;
@@ -256,6 +257,17 @@ public class GlobalExceptionHandler {
                                 ex.getMessage(),
                                 request.getDescription(false));
                 return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(EventRequestValidationException.class)
+        public ResponseEntity<ErrorResponse> handleEventRequestValidationException(
+                        EventRequestValidationException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.BAD_REQUEST.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
 
         // Error response class

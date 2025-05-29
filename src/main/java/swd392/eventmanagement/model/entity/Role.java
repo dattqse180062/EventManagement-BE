@@ -18,11 +18,11 @@ import java.util.Set;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    
+    private Long id;
+
     @Column(length = 50, nullable = false, unique = true)
     private String name;
-    
+
     @ManyToMany(mappedBy = "roles")
     private Set<User> users = new HashSet<>();
-} 
+}

@@ -5,6 +5,7 @@ import java.util.List;
 
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.model.dto.request.EventCreateRequest;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
@@ -30,4 +31,6 @@ public interface EventService {
             LocalDateTime to,
             EventMode mode,
             Long departmentId);
+
+    EventDetailsManagementDTO createNewEvent(EventCreateRequest eventCreateRequest, String departmentCode);
 }
