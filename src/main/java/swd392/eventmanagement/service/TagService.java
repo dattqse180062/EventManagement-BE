@@ -4,5 +4,7 @@ import swd392.eventmanagement.model.dto.request.TagRequest;
 
 public interface TagService {
     void createTag(TagRequest request);
+
+    void updateTag(Long id, TagRequest request);
 }
 
