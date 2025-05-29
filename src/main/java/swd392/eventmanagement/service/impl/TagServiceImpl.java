@@ -26,4 +26,13 @@ public class TagServiceImpl implements TagService {
         tagRepository.save(tag);
     }
 
+    @Override
+    public void updateTag(Long id, TagRequest request) {
+        Tag tag = tagRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tag không tồn tại"));
+        tag.setName(request.getName());
+        tag.setDescription(request.getDescription());
+        tagRepository.save(tag);
+    }
+
 }

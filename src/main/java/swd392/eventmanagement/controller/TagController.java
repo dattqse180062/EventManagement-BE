@@ -8,10 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.TagRequest;
 import swd392.eventmanagement.service.impl.TagServiceImpl;
 
@@ -45,4 +42,17 @@ public class TagController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Tạo tag thành công"));
     }
+    @PutMapping("/update/{id}")
+    @Operation(
+            summary = "Update tag",
+            description = "Cập nhật thông tin tag theo ID",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(responseCode = "200",description = "Cập nhật tag thành công")
+    @ApiResponse(responseCode = "404",description = "Không tìm thấy tag")
+    public ResponseEntity<Map<String, String>> updateTag(@PathVariable Long id,@RequestBody TagRequest request) {
+        tagService.updateTag(id, request);
+        return ResponseEntity.ok(Map.of("message","Cập nhật tag thành công"));
+    }
+
 }
