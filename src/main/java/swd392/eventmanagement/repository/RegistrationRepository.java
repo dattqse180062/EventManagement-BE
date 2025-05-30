@@ -37,4 +37,10 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 
     @Query("SELECT r FROM Registration r WHERE r.user.id = ?1 AND r.event.id = ?2")
     Optional<Registration> findByUserIdAndEventId(Long userId, Long eventId);
+
+    @Query(value = "SELECT COUNT(*) FROM registrations",nativeQuery = true)
+    long countALlRegistrations();
+
+    @Query(value = "SELECT COUNT(DISTINCT user_id) FROM registrations WHERE attended = true", nativeQuery = true)
+    long countAttendees();
 }
