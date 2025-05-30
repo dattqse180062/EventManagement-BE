@@ -7,10 +7,12 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
+import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.entity.Event;
 import swd392.eventmanagement.model.entity.EventType;
@@ -52,6 +54,11 @@ public interface EventMapper {
     @Mapping(target = "isRegistered", ignore = true)
     @Mapping(target = "registrationStatus", ignore = true)
     EventDetailsDTO toEventDetailsDTO(Event event);
+
+    @Mapping(target = "eventId", source = "event.id")
+    @Mapping(target = "currentStatus", source = "event.status")
+    @Mapping(target = "previousStatus", source = "previousStatus")
+    EventUpdateStatusResponse toEventUpdateStatusResponse(Event event, EventStatus previousStatus);
 
     @Named("departmentToName")
     default String departmentToName(Department department) {

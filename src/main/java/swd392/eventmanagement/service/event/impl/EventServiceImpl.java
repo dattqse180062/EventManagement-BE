@@ -2,6 +2,7 @@ package swd392.eventmanagement.service.event.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
@@ -22,14 +23,17 @@ import swd392.eventmanagement.service.event.builder.TagBuilder;
 import swd392.eventmanagement.service.event.validator.EventCreateValidator;
 import swd392.eventmanagement.service.event.validator.EventManageValidator;
 import swd392.eventmanagement.service.event.validator.EventUpdateValidator;
+import swd392.eventmanagement.service.event.status.EventStatusStateMachine;
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.enums.TargetAudience;
 import swd392.eventmanagement.exception.AccessDeniedException;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.EventProcessingException;
 import swd392.eventmanagement.exception.EventRequestValidationException;
 import swd392.eventmanagement.exception.EventTypeNotFoundException;
+import swd392.eventmanagement.exception.InvalidStateTransitionException;
 import swd392.eventmanagement.exception.TagNotFoundException;
 import swd392.eventmanagement.exception.UserNotFoundException;
 import swd392.eventmanagement.model.dto.request.EventCreateRequest;
@@ -38,17 +42,15 @@ import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.entity.Event;
 import swd392.eventmanagement.model.entity.EventCapacity;
 import swd392.eventmanagement.model.mapper.EventMapper;
 import swd392.eventmanagement.repository.EventCapacityRepository;
 import swd392.eventmanagement.repository.EventRepository;
-import swd392.eventmanagement.repository.EventSpecification;
 import swd392.eventmanagement.repository.RegistrationRepository;
-import swd392.eventmanagement.repository.UserDepartmentRoleRepository;
-import swd392.eventmanagement.repository.DepartmentRoleRepository;
-import swd392.eventmanagement.repository.UserRepository;
+import swd392.eventmanagement.repository.spec.EventSpecification;
 
 @Service
 public class EventServiceImpl implements EventService {
@@ -62,14 +64,13 @@ public class EventServiceImpl implements EventService {
     private final EventCreateValidator createValidator;
     private final EventUpdateValidator updateValidator;
     private final EventManageValidator manageValidator;
+    private final EventStatusStateMachine eventStatusStateMachine;
 
     public EventServiceImpl(
             EventRepository eventRepository,
             EventMapper eventMapper,
             RegistrationRepository registrationRepository,
-            EventCapacityRepository eventCapacityRepository, UserDepartmentRoleRepository userDepartmentRoleRepository,
-            DepartmentRoleRepository departmentRoleRepository,
-            UserRepository userRepository,
+            EventCapacityRepository eventCapacityRepository,
             EventBuilder eventBuilder,
             EventCapacityBuilder capacityBuilder,
             EventCreateValidator createValidator,
@@ -78,7 +79,8 @@ public class EventServiceImpl implements EventService {
             PlatformBuilder platformBuilder,
             TagBuilder tagBuilder,
             ImageBuilder imageBuilder,
-            EventManageValidator manageValidator) {
+            EventManageValidator manageValidator,
+            EventStatusStateMachine eventStatusStateMachine) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.registrationRepository = registrationRepository;
@@ -88,6 +90,7 @@ public class EventServiceImpl implements EventService {
         this.createValidator = createValidator;
         this.updateValidator = updateValidator;
         this.manageValidator = manageValidator;
+        this.eventStatusStateMachine = eventStatusStateMachine;
     }
 
     @Override
@@ -117,17 +120,30 @@ public class EventServiceImpl implements EventService {
             logger.error("Error retrieving events for department with code: {}", departmentCode, e);
             throw new EventProcessingException("Failed to retrieve events for management", e);
         }
-    }
-
-    @Override
+    }    @Override
     public List<EventListDTO> getAvailableEvents() {
         try {
-            List<Event> events = eventRepository.findByStatus(EventStatus.PUBLISHED);
+            List<Event> events = eventRepository.findByStatusIn(Set.of(
+                    EventStatus.PUBLISHED,
+                    EventStatus.BLOCKED,
+                    EventStatus.CLOSED,
+                    EventStatus.COMPLETED));
 
             if (events.isEmpty()) {
                 logger.info("No published events found");
                 throw new EventNotFoundException("No published events are currently available");
             }
+
+            // Sort events by status in specified order: PUBLISHED -> BLOCKED -> CLOSED -> COMPLETED
+            events.sort((e1, e2) -> {
+                List<EventStatus> order = List.of(
+                    EventStatus.PUBLISHED,
+                    EventStatus.BLOCKED,
+                    EventStatus.CLOSED,
+                    EventStatus.COMPLETED
+                );
+                return Integer.compare(order.indexOf(e1.getStatus()), order.indexOf(e2.getStatus()));
+            });
 
             logger.info("Found {} published events", events.size());
             return eventMapper.toDTOList(events);
@@ -175,35 +191,41 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
 
+            if (event.getStatus() == EventStatus.DRAFT
+                    || event.getStatus() == EventStatus.DELETED
+                    || event.getStatus() == EventStatus.CANCELED) {
+                throw new EventNotFoundException("Event not found with ID: " + eventId);
+            }
+
             // Get current authenticated user (if any)
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             Long userId = null;
             if (auth != null && auth.isAuthenticated() && !("anonymousUser".equals(auth.getPrincipal()))) {
                 userId = ((UserDetailsImpl) auth.getPrincipal()).getId();
-            }
-
-            // Use MapStruct to map the base entity properties
+            } // Use MapStruct to map the base entity properties
             EventDetailsDTO eventDetailsDTO = eventMapper.toEventDetailsDTO(event);
 
-            // Get total registration count
-            Long registeredCount = registrationRepository.countByEvent(event);
-            eventDetailsDTO.setRegisteredCount(registeredCount != null ? registeredCount.intValue() : 0);
-
             // Student and Lecturer capacities and counts
+            int totalRegisteredCount = 0;
             for (EventCapacity capacity : eventCapacityRepository.findByEvent(event)) {
                 String roleName = capacity.getRole().getName();
                 if ("ROLE_STUDENT".equals(roleName)) {
                     eventDetailsDTO.setMaxCapacityStudent(capacity.getCapacity());
                     // Count student registrations
                     Long studentCount = registrationRepository.countByEventAndUserRole(event, "ROLE_STUDENT");
-                    eventDetailsDTO.setRegisteredCountStudent(studentCount != null ? studentCount.intValue() : 0);
+                    int studentCountInt = studentCount != null ? studentCount.intValue() : 0;
+                    eventDetailsDTO.setRegisteredCountStudent(studentCountInt);
+                    totalRegisteredCount += studentCountInt;
                 } else if ("ROLE_LECTURER".equals(roleName)) {
                     eventDetailsDTO.setMaxCapacityLecturer(capacity.getCapacity());
                     // Count lecturer registrations
                     Long lecturerCount = registrationRepository.countByEventAndUserRole(event, "ROLE_LECTURER");
-                    eventDetailsDTO.setRegisteredCountLecturer(lecturerCount != null ? lecturerCount.intValue() : 0);
+                    int lecturerCountInt = lecturerCount != null ? lecturerCount.intValue() : 0;
+                    eventDetailsDTO.setRegisteredCountLecturer(lecturerCountInt);
+                    totalRegisteredCount += lecturerCountInt;
                 }
             }
+            eventDetailsDTO.setRegisteredCount(totalRegisteredCount);
 
             // Check if current user is registered for this event
             if (userId != null) {
@@ -240,10 +262,7 @@ public class EventServiceImpl implements EventService {
             if (eventId == null) {
                 throw new IllegalArgumentException("Event ID cannot be null");
             } // Validate user has permission to access events in this department
-            Department department = manageValidator.validateUserDepartmentAccess(departmentCode); // Fetch event by ID
-                                                                                                  // and verify it
-                                                                                                  // belongs to the
-                                                                                                  // department
+            Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
             manageValidator.validateEventDepartmentAccess(event, department, departmentCode);
@@ -270,20 +289,27 @@ public class EventServiceImpl implements EventService {
             String name,
             List<Long> tagIds,
             Long typeId,
+            TargetAudience targetAudience,
             EventStatus status,
             LocalDateTime from,
             LocalDateTime to,
             EventMode mode,
             Long departmentId) {
         try {
+            if (status == EventStatus.CANCELED || status == EventStatus.DRAFT || status == EventStatus.DELETED) {
+                throw new EventProcessingException("Cannot search for events with DRAFT/DELETED/CANCELED status");
+            }
+
             Specification<Event> spec = EventSpecification.filter(
                     name,
                     tagIds,
                     typeId,
+                    targetAudience,
                     status,
                     from,
-                    to, mode,
-                    departmentId != null && departmentId > 0 ? departmentId : null);
+                    to,
+                    mode,
+                    departmentId);
             List<Event> events = eventRepository.findAll(spec);
             if (events.isEmpty()) {
                 logger.info("No events found matching search criteria");
@@ -320,9 +346,10 @@ public class EventServiceImpl implements EventService {
 
             // Validate user has permission to create events in this department
             Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
-
-            // Create event entity with basic fields
             Event event = eventBuilder.createEventWithBasicFields(eventCreateRequest, department);
+
+            // Save event first to get ID
+            event = eventRepository.save(event);
 
             // Apply all updates using the common method
             event = eventBuilder.applyEventUpdates(
@@ -378,6 +405,10 @@ public class EventServiceImpl implements EventService {
             Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
+
+            if (event.getStatus() != EventStatus.DRAFT && event.getStatus() != EventStatus.BLOCKED) {
+                throw new EventProcessingException("Event can only be updated in DRAFT or BLOCKED status");
+            }
             manageValidator.validateEventDepartmentAccess(event, department, departmentCode);
 
             // Update basic fields first
@@ -406,6 +437,52 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             logger.error("Error updating event with ID: {}", eventId, e);
             throw new EventProcessingException("Failed to update event", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public EventUpdateStatusResponse updateEventStatus(Long eventId, EventStatus newStatus, String departmentCode) {
+        logger.info("Updating event status - Event ID: {}, New Status: {}, Department: {}", eventId, newStatus,
+                departmentCode);
+
+        try {
+            if (eventId == null) {
+                throw new IllegalArgumentException("Event ID cannot be null");
+            }
+            if (newStatus == null) {
+                throw new IllegalArgumentException("New status cannot be null");
+            }
+
+            // Validate user has permission to update events in this department
+            Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
+
+            // Get event and validate department access
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
+            manageValidator.validateEventDepartmentAccess(event, department, departmentCode);
+
+            // Validate status transition
+            EventStatus currentStatus = event.getStatus();
+            eventStatusStateMachine.validateTransition(currentStatus, newStatus); // Update the status
+            event.setStatus(newStatus);
+            event.setUpdatedAt(LocalDateTime.now());
+            event = eventRepository.save(event);
+
+            // Map to response using mapper
+            EventUpdateStatusResponse response = eventMapper.toEventUpdateStatusResponse(event, currentStatus);
+
+            logger.info("Successfully updated event status - Event ID: {}, Previous Status: {}, New Status: {}",
+                    eventId, currentStatus, newStatus);
+            return response;
+
+        } catch (EventNotFoundException | AccessDeniedException | DepartmentNotFoundException
+                | InvalidStateTransitionException e) {
+            // Just rethrow specific exceptions
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error updating status for event with ID: {}", eventId, e);
+            throw new EventProcessingException("Failed to update event status", e);
         }
     }
 }

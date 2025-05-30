@@ -23,10 +23,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.enums.TargetAudience;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 import swd392.eventmanagement.service.event.EventService;
 import swd392.eventmanagement.model.dto.request.EventCreateRequest;
 import swd392.eventmanagement.model.dto.request.EventUpdateRequest;
@@ -77,13 +79,14 @@ public class EventController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) List<Long> tagIds,
             @RequestParam(required = false) Long typeId,
+            @RequestParam(required = false) TargetAudience targetAudience,
             @RequestParam(required = false) EventStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(required = false) EventMode mode,
             @RequestParam(required = false) Long departmentId) {
         return ResponseEntity.ok(eventService.searchEvents(
-                name, tagIds, typeId, status, from, to, mode, departmentId));
+                name, tagIds, typeId, targetAudience, status, from, to, mode, departmentId));
     }
 
     @GetMapping("/management/{departmentCode}")
@@ -129,5 +132,18 @@ public class EventController {
             @PathVariable Long eventId,
             @Valid @RequestBody EventUpdateRequest eventUpdateRequest) {
         return ResponseEntity.ok(eventService.updateEvent(eventId, eventUpdateRequest, departmentCode));
+    }
+
+    @PutMapping("/management/{departmentCode}/event/{eventId}/status")
+    @Operation(summary = "Update event status", description = "Updates the status of an existing event in the specified department", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Event status updated successfully", content = @Content(schema = @Schema(implementation = EventUpdateStatusResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Bad Request - Invalid status transition requested")
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - Event not found")
+    public ResponseEntity<?> updateEventStatus(
+            @PathVariable String departmentCode,
+            @PathVariable Long eventId,
+            @RequestParam EventStatus newStatus) {
+        return ResponseEntity.ok(eventService.updateEventStatus(eventId, newStatus, departmentCode));
     }
 }

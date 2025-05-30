@@ -15,6 +15,7 @@ import swd392.eventmanagement.exception.InvalidGoogleTokenException;
 import swd392.eventmanagement.exception.UnauthorizedDomainException;
 import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.EventProcessingException;
+import swd392.eventmanagement.exception.EventRegistrationConflictException;
 import swd392.eventmanagement.exception.EventRequestValidationException;
 import swd392.eventmanagement.exception.UserProcessingException;
 import swd392.eventmanagement.exception.UserNotFoundException;
@@ -26,6 +27,7 @@ import swd392.eventmanagement.exception.EventTypeProcessingException;
 import swd392.eventmanagement.exception.TagNotFoundException;
 import swd392.eventmanagement.exception.TagProcessingException;
 import swd392.eventmanagement.exception.ValidationException;
+import swd392.eventmanagement.exception.InvalidStateTransitionException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -262,6 +264,39 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(EventRequestValidationException.class)
         public ResponseEntity<ErrorResponse> handleEventRequestValidationException(
                         EventRequestValidationException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.BAD_REQUEST.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+
+        @ExceptionHandler(InvalidStateTransitionException.class)
+        public ResponseEntity<ErrorResponse> handleInvalidStateTransitionException(
+                        InvalidStateTransitionException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.BAD_REQUEST.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+
+        @ExceptionHandler(EventRegistrationConflictException.class)
+        public ResponseEntity<ErrorResponse> handleEventRegistrationConflictException(
+                        swd392.eventmanagement.exception.EventRegistrationConflictException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.CONFLICT.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+        }
+
+        @ExceptionHandler(swd392.eventmanagement.exception.EventRegistrationException.class)
+        public ResponseEntity<ErrorResponse> handleEventRegistrationException(
+                        swd392.eventmanagement.exception.EventRegistrationException ex, WebRequest request) {
                 ErrorResponse errorResponse = new ErrorResponse(
                                 HttpStatus.BAD_REQUEST.value(),
                                 LocalDateTime.now(),

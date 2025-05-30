@@ -139,6 +139,7 @@ CREATE TYPE event_mode AS ENUM (
 CREATE TYPE event_status AS ENUM (
     'DRAFT',
     'PUBLISHED',
+    'BLOCKED',
     'CLOSED',
     'CANCELED',
     'COMPLETED',

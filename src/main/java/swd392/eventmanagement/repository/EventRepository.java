@@ -16,6 +16,7 @@ import swd392.eventmanagement.model.entity.Event;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
     @Query("SELECT e FROM Event e JOIN Registration r ON e.id = r.event.id WHERE r.user.id = :userId")
@@ -27,6 +28,8 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
 
     List<Event> findByStatus(EventStatus status);
 
+    List<Event> findByStatusIn(Set<EventStatus> statuses);
+
     List<Event> findByStartTimeAfterAndStatus(LocalDateTime dateTime, EventStatus status);
 
     List<Event> findByDepartmentAndStatus(Department department, EventStatus status);
@@ -37,6 +40,10 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     List<Event> findByAudienceAndStatus(TargetAudience audience, EventStatus status);
 
     List<Event> findByStartTimeBetweenAndStatus(LocalDateTime start, LocalDateTime end, EventStatus status);
+
+    List<Event> findAllByStatusAndRegistrationEndBefore(EventStatus status, LocalDateTime dateTime);
+
+    List<Event> findAllByStatusAndEndTimeBefore(EventStatus status, LocalDateTime dateTime);
 
     @Query(value = "SELECT COUNT(*) FROM events",nativeQuery = true)
     long countAllEvents();
