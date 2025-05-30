@@ -2,7 +2,6 @@ package swd392.eventmanagement.model.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
@@ -12,7 +11,6 @@ public class PlatformCreateRequest {
     private String name;
 
     @NotBlank(message = "Platform URL cannot be empty when platform is provided")
-    @Pattern(regexp = "^(https?:\\/\\/)?([\\w\\-]+(\\.[\\w\\-]+)*|localhost)(\\/[\\w\\-]*)*(\\?[\\w\\-\\&\\=]*)?$", message = "Invalid URL format")
     @Size(max = 255, message = "URL cannot exceed 255 characters")
     private String url;
 }
