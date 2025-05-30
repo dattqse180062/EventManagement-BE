@@ -36,4 +36,8 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     List<Event> findByAudienceAndStatus(TargetAudience audience, EventStatus status);
 
     List<Event> findByStartTimeBetweenAndStatus(LocalDateTime start, LocalDateTime end, EventStatus status);
+
+    List<Event> findAllByStatusAndRegistrationEndBefore(EventStatus status, LocalDateTime dateTime);
+
+    List<Event> findAllByStatusAndEndTimeBefore(EventStatus status, LocalDateTime dateTime);
 }

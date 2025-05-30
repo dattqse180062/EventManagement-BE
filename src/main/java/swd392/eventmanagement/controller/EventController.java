@@ -27,6 +27,7 @@ import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 import swd392.eventmanagement.service.event.EventService;
 import swd392.eventmanagement.model.dto.request.EventCreateRequest;
 import swd392.eventmanagement.model.dto.request.EventUpdateRequest;
@@ -129,5 +130,18 @@ public class EventController {
             @PathVariable Long eventId,
             @Valid @RequestBody EventUpdateRequest eventUpdateRequest) {
         return ResponseEntity.ok(eventService.updateEvent(eventId, eventUpdateRequest, departmentCode));
+    }
+
+    @PutMapping("/management/{departmentCode}/event/{eventId}/status")
+    @Operation(summary = "Update event status", description = "Updates the status of an existing event in the specified department", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Event status updated successfully", content = @Content(schema = @Schema(implementation = EventUpdateStatusResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Bad Request - Invalid status transition requested")
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - Event not found")
+    public ResponseEntity<?> updateEventStatus(
+            @PathVariable String departmentCode,
+            @PathVariable Long eventId,
+            @RequestParam EventStatus newStatus) {
+        return ResponseEntity.ok(eventService.updateEventStatus(eventId, newStatus, departmentCode));
     }
 }

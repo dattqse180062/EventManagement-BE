@@ -11,6 +11,7 @@ import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 
 public interface EventService {
     List<EventListDTO> getAvailableEvents();
@@ -36,4 +37,6 @@ public interface EventService {
     EventDetailsManagementDTO createNewEvent(EventCreateRequest eventCreateRequest, String departmentCode);
 
     EventDetailsManagementDTO updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest, String departmentCode);
+
+    EventUpdateStatusResponse updateEventStatus(Long eventId, EventStatus newStatus, String departmentCode);
 }

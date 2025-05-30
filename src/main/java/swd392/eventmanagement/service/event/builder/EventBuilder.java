@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.exception.EventRequestValidationException;
 import swd392.eventmanagement.exception.EventTypeNotFoundException;
 import swd392.eventmanagement.model.dto.request.EventCreateRequest;
 import swd392.eventmanagement.model.dto.request.EventUpdateRequest;
@@ -125,7 +126,7 @@ public class EventBuilder {
                 logger.warn(
                         "Attempted to reduce capacity below current registrations - Event: {}, Current registrations: {}, Requested capacity: {}",
                         event.getId(), currentRegistrationCount, request.getMaxCapacity());
-                throw new swd392.eventmanagement.exception.EventRequestValidationException(
+                throw new EventRequestValidationException(
                         "Cannot reduce maximum capacity below the current number of registrations ("
                                 + currentRegistrationCount + ")");
             }
