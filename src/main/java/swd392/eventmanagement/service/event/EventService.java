@@ -1,10 +1,12 @@
 package swd392.eventmanagement.service.event;
 
+import java.lang.annotation.Target;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.enums.TargetAudience;
 import swd392.eventmanagement.model.dto.request.EventCreateRequest;
 import swd392.eventmanagement.model.dto.request.EventUpdateRequest;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
@@ -28,6 +30,7 @@ public interface EventService {
             String name,
             List<Long> tagIds,
             Long typeId,
+            TargetAudience targetAudience,
             EventStatus status,
             LocalDateTime from,
             LocalDateTime to,
