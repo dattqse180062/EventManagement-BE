@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.enums.TargetAudience;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListDTO;
@@ -78,13 +79,14 @@ public class EventController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) List<Long> tagIds,
             @RequestParam(required = false) Long typeId,
+            @RequestParam(required = false) TargetAudience targetAudience,
             @RequestParam(required = false) EventStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(required = false) EventMode mode,
             @RequestParam(required = false) Long departmentId) {
         return ResponseEntity.ok(eventService.searchEvents(
-                name, tagIds, typeId, status, from, to, mode, departmentId));
+                name, tagIds, typeId, targetAudience, status, from, to, mode, departmentId));
     }
 
     @GetMapping("/management/{departmentCode}")

@@ -25,6 +25,7 @@ import swd392.eventmanagement.service.event.validator.EventUpdateValidator;
 import swd392.eventmanagement.service.event.status.EventStatusStateMachine;
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.enums.TargetAudience;
 import swd392.eventmanagement.exception.AccessDeniedException;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.EventNotFoundException;
@@ -268,20 +269,27 @@ public class EventServiceImpl implements EventService {
             String name,
             List<Long> tagIds,
             Long typeId,
+            TargetAudience targetAudience,
             EventStatus status,
             LocalDateTime from,
             LocalDateTime to,
             EventMode mode,
             Long departmentId) {
         try {
+            if (status == EventStatus.CANCELED || status == EventStatus.DRAFT || status == EventStatus.DELETED) {
+                throw new EventProcessingException("Cannot search for events with DRAFT/DELETED/CANCELED status");
+            }
+
             Specification<Event> spec = EventSpecification.filter(
                     name,
                     tagIds,
                     typeId,
+                    targetAudience,
                     status,
                     from,
-                    to, mode,
-                    departmentId != null && departmentId > 0 ? departmentId : null);
+                    to,
+                    mode,
+                    departmentId);
             List<Event> events = eventRepository.findAll(spec);
             if (events.isEmpty()) {
                 logger.info("No events found matching search criteria");

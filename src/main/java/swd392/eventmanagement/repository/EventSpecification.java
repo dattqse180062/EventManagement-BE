@@ -3,6 +3,7 @@ package swd392.eventmanagement.repository;
 import org.springframework.data.jpa.domain.Specification;
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.enums.TargetAudience;
 import swd392.eventmanagement.model.entity.Event;
 
 import jakarta.persistence.criteria.*;
@@ -15,6 +16,7 @@ public class EventSpecification {
             String name,
             List<Long> tagIds,
             Long typeId,
+            TargetAudience targetAudience,
             EventStatus status,
             LocalDateTime from,
             LocalDateTime to,
@@ -42,9 +44,26 @@ public class EventSpecification {
                 predicates.add(cb.equal(root.get("type").get("id"), typeId));
             }
 
+            // Filter by target audience
+            if (targetAudience != null) {
+                if (targetAudience == TargetAudience.STUDENT) {
+                    predicates.add(root.get("targetAudience").in(TargetAudience.STUDENT, TargetAudience.BOTH));
+                } else if (targetAudience == TargetAudience.LECTURER) {
+                    predicates.add(root.get("targetAudience").in(TargetAudience.LECTURER, TargetAudience.BOTH));
+                } else {
+                    predicates.add(cb.equal(root.get("targetAudience"), targetAudience));
+                }
+            }
+
             // Filter by status
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
+            } else {
+                predicates.add(root.get("status").in(
+                        EventStatus.PUBLISHED,
+                        EventStatus.BLOCKED,
+                        EventStatus.CLOSED,
+                        EventStatus.COMPLETED));
             }
 
             // Filter by start time range
