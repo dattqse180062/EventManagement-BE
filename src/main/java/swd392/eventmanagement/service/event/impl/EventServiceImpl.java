@@ -2,6 +2,7 @@ package swd392.eventmanagement.service.event.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
@@ -48,8 +49,8 @@ import swd392.eventmanagement.model.entity.EventCapacity;
 import swd392.eventmanagement.model.mapper.EventMapper;
 import swd392.eventmanagement.repository.EventCapacityRepository;
 import swd392.eventmanagement.repository.EventRepository;
-import swd392.eventmanagement.repository.EventSpecification;
 import swd392.eventmanagement.repository.RegistrationRepository;
+import swd392.eventmanagement.repository.spec.EventSpecification;
 
 @Service
 public class EventServiceImpl implements EventService {
@@ -119,17 +120,30 @@ public class EventServiceImpl implements EventService {
             logger.error("Error retrieving events for department with code: {}", departmentCode, e);
             throw new EventProcessingException("Failed to retrieve events for management", e);
         }
-    }
-
-    @Override
+    }    @Override
     public List<EventListDTO> getAvailableEvents() {
         try {
-            List<Event> events = eventRepository.findByStatus(EventStatus.PUBLISHED);
+            List<Event> events = eventRepository.findByStatusIn(Set.of(
+                    EventStatus.PUBLISHED,
+                    EventStatus.BLOCKED,
+                    EventStatus.CLOSED,
+                    EventStatus.COMPLETED));
 
             if (events.isEmpty()) {
                 logger.info("No published events found");
                 throw new EventNotFoundException("No published events are currently available");
             }
+
+            // Sort events by status in specified order: PUBLISHED -> BLOCKED -> CLOSED -> COMPLETED
+            events.sort((e1, e2) -> {
+                List<EventStatus> order = List.of(
+                    EventStatus.PUBLISHED,
+                    EventStatus.BLOCKED,
+                    EventStatus.CLOSED,
+                    EventStatus.COMPLETED
+                );
+                return Integer.compare(order.indexOf(e1.getStatus()), order.indexOf(e2.getStatus()));
+            });
 
             logger.info("Found {} published events", events.size());
             return eventMapper.toDTOList(events);
@@ -177,35 +191,41 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
 
+            if (event.getStatus() == EventStatus.DRAFT
+                    || event.getStatus() == EventStatus.DELETED
+                    || event.getStatus() == EventStatus.CANCELED) {
+                throw new EventNotFoundException("Event not found with ID: " + eventId);
+            }
+
             // Get current authenticated user (if any)
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             Long userId = null;
             if (auth != null && auth.isAuthenticated() && !("anonymousUser".equals(auth.getPrincipal()))) {
                 userId = ((UserDetailsImpl) auth.getPrincipal()).getId();
-            }
-
-            // Use MapStruct to map the base entity properties
+            } // Use MapStruct to map the base entity properties
             EventDetailsDTO eventDetailsDTO = eventMapper.toEventDetailsDTO(event);
 
-            // Get total registration count
-            Long registeredCount = registrationRepository.countByEvent(event);
-            eventDetailsDTO.setRegisteredCount(registeredCount != null ? registeredCount.intValue() : 0);
-
             // Student and Lecturer capacities and counts
+            int totalRegisteredCount = 0;
             for (EventCapacity capacity : eventCapacityRepository.findByEvent(event)) {
                 String roleName = capacity.getRole().getName();
                 if ("ROLE_STUDENT".equals(roleName)) {
                     eventDetailsDTO.setMaxCapacityStudent(capacity.getCapacity());
                     // Count student registrations
                     Long studentCount = registrationRepository.countByEventAndUserRole(event, "ROLE_STUDENT");
-                    eventDetailsDTO.setRegisteredCountStudent(studentCount != null ? studentCount.intValue() : 0);
+                    int studentCountInt = studentCount != null ? studentCount.intValue() : 0;
+                    eventDetailsDTO.setRegisteredCountStudent(studentCountInt);
+                    totalRegisteredCount += studentCountInt;
                 } else if ("ROLE_LECTURER".equals(roleName)) {
                     eventDetailsDTO.setMaxCapacityLecturer(capacity.getCapacity());
                     // Count lecturer registrations
                     Long lecturerCount = registrationRepository.countByEventAndUserRole(event, "ROLE_LECTURER");
-                    eventDetailsDTO.setRegisteredCountLecturer(lecturerCount != null ? lecturerCount.intValue() : 0);
+                    int lecturerCountInt = lecturerCount != null ? lecturerCount.intValue() : 0;
+                    eventDetailsDTO.setRegisteredCountLecturer(lecturerCountInt);
+                    totalRegisteredCount += lecturerCountInt;
                 }
             }
+            eventDetailsDTO.setRegisteredCount(totalRegisteredCount);
 
             // Check if current user is registered for this event
             if (userId != null) {
@@ -326,9 +346,10 @@ public class EventServiceImpl implements EventService {
 
             // Validate user has permission to create events in this department
             Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
-
-            // Create event entity with basic fields
             Event event = eventBuilder.createEventWithBasicFields(eventCreateRequest, department);
+
+            // Save event first to get ID
+            event = eventRepository.save(event);
 
             // Apply all updates using the common method
             event = eventBuilder.applyEventUpdates(

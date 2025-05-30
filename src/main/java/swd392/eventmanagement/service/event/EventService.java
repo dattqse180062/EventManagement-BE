@@ -1,6 +1,5 @@
 package swd392.eventmanagement.service.event;
 
-import java.lang.annotation.Target;
 import java.time.LocalDateTime;
 import java.util.List;
 
