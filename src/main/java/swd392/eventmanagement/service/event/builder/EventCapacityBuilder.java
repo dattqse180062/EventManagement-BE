@@ -46,7 +46,7 @@ public class EventCapacityBuilder {
      *                       can be null or empty
      */
     public void updateEventCapacities(Event event, Set<RoleCapacityCreateRequest> roleCapacities) {
-        // Kiểm tra registration còn tồn tại khi chuyển audience
+        // Check if registration exists when switching audience
         roleCapacityValidator.validateAudienceChange(event, event.getAudience(), registrationRepository);
         // First, validate that we're not reducing any capacity below the current
         // registrations

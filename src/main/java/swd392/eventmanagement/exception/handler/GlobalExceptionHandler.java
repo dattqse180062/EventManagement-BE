@@ -26,6 +26,7 @@ import swd392.eventmanagement.exception.EventTypeProcessingException;
 import swd392.eventmanagement.exception.TagNotFoundException;
 import swd392.eventmanagement.exception.TagProcessingException;
 import swd392.eventmanagement.exception.ValidationException;
+import swd392.eventmanagement.exception.InvalidStateTransitionException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -262,6 +263,17 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(EventRequestValidationException.class)
         public ResponseEntity<ErrorResponse> handleEventRequestValidationException(
                         EventRequestValidationException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.BAD_REQUEST.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+
+        @ExceptionHandler(InvalidStateTransitionException.class)
+        public ResponseEntity<ErrorResponse> handleInvalidStateTransitionException(
+                        InvalidStateTransitionException ex, WebRequest request) {
                 ErrorResponse errorResponse = new ErrorResponse(
                                 HttpStatus.BAD_REQUEST.value(),
                                 LocalDateTime.now(),
