@@ -26,7 +26,9 @@ public class Location {
 
     @Column(name = "district", length = 100)
     private String district;
-
     @Column(name = "city", length = 100)
     private String city;
+
+    @OneToOne(mappedBy = "location")
+    private Event event;
 }

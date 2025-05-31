@@ -21,7 +21,7 @@ import swd392.eventmanagement.service.event.builder.LocationBuilder;
 import swd392.eventmanagement.service.event.builder.PlatformBuilder;
 import swd392.eventmanagement.service.event.builder.TagBuilder;
 import swd392.eventmanagement.service.event.validator.EventCreateValidator;
-import swd392.eventmanagement.service.event.validator.EventManageValidator;
+import swd392.eventmanagement.service.event.validator.EventManageAccessValidator;
 import swd392.eventmanagement.service.event.validator.EventUpdateValidator;
 import swd392.eventmanagement.service.event.status.EventStatusStateMachine;
 import swd392.eventmanagement.enums.EventMode;
@@ -58,12 +58,12 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
     private final RegistrationRepository registrationRepository;
-    private final EventCapacityRepository eventCapacityRepository; // Builder and validator objects
+    private final EventCapacityRepository eventCapacityRepository;
     private final EventBuilder eventBuilder;
     private final EventCapacityBuilder capacityBuilder;
     private final EventCreateValidator createValidator;
     private final EventUpdateValidator updateValidator;
-    private final EventManageValidator manageValidator;
+    private final EventManageAccessValidator manageAccessValidator;
     private final EventStatusStateMachine eventStatusStateMachine;
 
     public EventServiceImpl(
@@ -79,7 +79,7 @@ public class EventServiceImpl implements EventService {
             PlatformBuilder platformBuilder,
             TagBuilder tagBuilder,
             ImageBuilder imageBuilder,
-            EventManageValidator manageValidator,
+            EventManageAccessValidator manageValidator,
             EventStatusStateMachine eventStatusStateMachine) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
@@ -89,38 +89,11 @@ public class EventServiceImpl implements EventService {
         this.capacityBuilder = capacityBuilder;
         this.createValidator = createValidator;
         this.updateValidator = updateValidator;
-        this.manageValidator = manageValidator;
+        this.manageAccessValidator = manageValidator;
         this.eventStatusStateMachine = eventStatusStateMachine;
     }
 
     @Override
-    public List<EventListManagementDTO> getEventsForManagement(String departmentCode) {
-        logger.info("Getting events for management for department code: {}", departmentCode);
-        try {
-            // Validate user has permission to access events in this department
-            Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
-
-            // Get all events for this department
-            List<Event> events = eventRepository.findByDepartment(department);
-
-            if (events.isEmpty()) {
-                logger.info("No events found for department with code: {}", departmentCode);
-                throw new EventNotFoundException("No events found for department with code: " + departmentCode);
-            }
-
-            // Use EventMapper to map to DTOs
-            List<EventListManagementDTO> eventDTOs = eventMapper.toEventListManagementDTOList(events);
-
-            logger.info("Found {} events for department with code: {}", eventDTOs.size(), departmentCode);
-            return eventDTOs;
-        } catch (DepartmentNotFoundException | EventNotFoundException | AccessDeniedException e) {
-            // Just rethrow exceptions without additional logging
-            throw e;
-        } catch (Exception e) {
-            logger.error("Error retrieving events for department with code: {}", departmentCode, e);
-            throw new EventProcessingException("Failed to retrieve events for management", e);
-        }
-    }    @Override
     public List<EventListDTO> getAvailableEvents() {
         try {
             List<Event> events = eventRepository.findByStatusIn(Set.of(
@@ -134,14 +107,14 @@ public class EventServiceImpl implements EventService {
                 throw new EventNotFoundException("No published events are currently available");
             }
 
-            // Sort events by status in specified order: PUBLISHED -> BLOCKED -> CLOSED -> COMPLETED
+            // Sort events by status in specified order: PUBLISHED -> BLOCKED -> CLOSED ->
+            // COMPLETED
             events.sort((e1, e2) -> {
                 List<EventStatus> order = List.of(
-                    EventStatus.PUBLISHED,
-                    EventStatus.BLOCKED,
-                    EventStatus.CLOSED,
-                    EventStatus.COMPLETED
-                );
+                        EventStatus.PUBLISHED,
+                        EventStatus.BLOCKED,
+                        EventStatus.CLOSED,
+                        EventStatus.COMPLETED);
                 return Integer.compare(order.indexOf(e1.getStatus()), order.indexOf(e2.getStatus()));
             });
 
@@ -255,36 +228,6 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventDetailsManagementDTO getEventDetailsForManagement(String departmentCode, Long eventId) {
-        logger.info("Getting event details for management for department code: {} and event ID: {}", departmentCode,
-                eventId);
-        try {
-            if (eventId == null) {
-                throw new IllegalArgumentException("Event ID cannot be null");
-            } // Validate user has permission to access events in this department
-            Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
-            manageValidator.validateEventDepartmentAccess(event, department, departmentCode);
-
-            // Map the event entity to EventDetailsManagement DTO
-            EventDetailsManagementDTO eventDetailsManagement = eventMapper.toEventDetailsManagement(event);
-            capacityBuilder.setEventCapacityInfo(eventDetailsManagement, event);
-
-            logger.info("Successfully retrieved event management details for department: {} and event ID: {}",
-                    departmentCode, eventId);
-            return eventDetailsManagement;
-        } catch (EventNotFoundException | AccessDeniedException | DepartmentNotFoundException e) {
-            // Just rethrow exceptions without additional logging
-            throw e;
-        } catch (Exception e) {
-            logger.error("Error retrieving management details for department: {} and event ID: {}", departmentCode,
-                    eventId, e);
-            throw new EventProcessingException("Failed to retrieve event management details", e);
-        }
-    }
-
-    @Override
     public List<EventListDTO> searchEvents(
             String name,
             List<Long> tagIds,
@@ -328,14 +271,65 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    /**
-     * Creates a new event based on the provided request
-     * 
-     * @param eventCreateRequest Request containing event data
-     * @param departmentCode     Code of the department the event belongs to
-     * @return New event details
-     * @throws AccessDeniedException If user lacks required permissions
-     */
+    @Override
+    public List<EventListManagementDTO> getEventsForManagement(String departmentCode) {
+        logger.info("Getting events for management for department code: {}", departmentCode);
+        try {
+            // Validate user has permission to access events in this department
+            Department department = manageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+            // Get all events for this department
+            List<Event> events = eventRepository.findByDepartment(department);
+
+            if (events.isEmpty()) {
+                logger.info("No events found for department with code: {}", departmentCode);
+                throw new EventNotFoundException("No events found for department with code: " + departmentCode);
+            }
+
+            // Use EventMapper to map to DTOs
+            List<EventListManagementDTO> eventDTOs = eventMapper.toEventListManagementDTOList(events);
+
+            logger.info("Found {} events for department with code: {}", eventDTOs.size(), departmentCode);
+            return eventDTOs;
+        } catch (DepartmentNotFoundException | EventNotFoundException | AccessDeniedException e) {
+            // Just rethrow exceptions without additional logging
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving events for department with code: {}", departmentCode, e);
+            throw new EventProcessingException("Failed to retrieve events for management", e);
+        }
+    }
+
+    @Override
+    public EventDetailsManagementDTO getEventDetailsForManagement(String departmentCode, Long eventId) {
+        logger.info("Getting event details for management for department code: {} and event ID: {}", departmentCode,
+                eventId);
+        try {
+            if (eventId == null) {
+                throw new IllegalArgumentException("Event ID cannot be null");
+            } // Validate user has permission to access events in this department
+            Department department = manageAccessValidator.validateUserDepartmentAccess(departmentCode);
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
+            manageAccessValidator.validateEventDepartmentAccess(event, department, departmentCode);
+
+            // Map the event entity to EventDetailsManagement DTO
+            EventDetailsManagementDTO eventDetailsManagement = eventMapper.toEventDetailsManagement(event);
+            capacityBuilder.setEventCapacityInfo(eventDetailsManagement, event);
+
+            logger.info("Successfully retrieved event management details for department: {} and event ID: {}",
+                    departmentCode, eventId);
+            return eventDetailsManagement;
+        } catch (EventNotFoundException | AccessDeniedException | DepartmentNotFoundException e) {
+            // Just rethrow exceptions without additional logging
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving management details for department: {} and event ID: {}", departmentCode,
+                    eventId, e);
+            throw new EventProcessingException("Failed to retrieve event management details", e);
+        }
+    }
+
     @Override
     @Transactional
     public EventDetailsManagementDTO createNewEvent(EventCreateRequest eventCreateRequest, String departmentCode) {
@@ -345,7 +339,7 @@ public class EventServiceImpl implements EventService {
             createValidator.validateEventCreateRequest(eventCreateRequest);
 
             // Validate user has permission to create events in this department
-            Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
+            Department department = manageAccessValidator.validateUserDepartmentAccess(departmentCode);
             Event event = eventBuilder.createEventWithBasicFields(eventCreateRequest, department);
 
             // Save event first to get ID
@@ -378,17 +372,6 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    /**
-     * Updates an event with the provided data following PUT semantics
-     * All fields are replaced with values from the request
-     * 
-     * @param eventId            ID of the event to update
-     * @param eventUpdateRequest Request containing new values
-     * @param departmentCode     Code of the department the event belongs to
-     * @return Updated event details
-     * @throws AccessDeniedException  If user lacks required permissions
-     * @throws EventNotFoundException If event cannot be found
-     */
     @Override
     @Transactional
     public EventDetailsManagementDTO updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest,
@@ -402,14 +385,14 @@ public class EventServiceImpl implements EventService {
             updateValidator.validateEventUpdateRequest(eventUpdateRequest);
 
             // Validate user has permission to update events in this department
-            Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
+            Department department = manageAccessValidator.validateUserDepartmentAccess(departmentCode);
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
 
             if (event.getStatus() != EventStatus.DRAFT && event.getStatus() != EventStatus.BLOCKED) {
                 throw new EventProcessingException("Event can only be updated in DRAFT or BLOCKED status");
             }
-            manageValidator.validateEventDepartmentAccess(event, department, departmentCode);
+            manageAccessValidator.validateEventDepartmentAccess(event, department, departmentCode);
 
             // Update basic fields first
             eventBuilder.updateEventBasicFields(event, eventUpdateRequest, registrationRepository);
@@ -455,12 +438,12 @@ public class EventServiceImpl implements EventService {
             }
 
             // Validate user has permission to update events in this department
-            Department department = manageValidator.validateUserDepartmentAccess(departmentCode);
+            Department department = manageAccessValidator.validateUserDepartmentAccess(departmentCode);
 
             // Get event and validate department access
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
-            manageValidator.validateEventDepartmentAccess(event, department, departmentCode);
+            manageAccessValidator.validateEventDepartmentAccess(event, department, departmentCode);
 
             // Validate status transition
             EventStatus currentStatus = event.getStatus();

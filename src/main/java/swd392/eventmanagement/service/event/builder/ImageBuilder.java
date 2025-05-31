@@ -1,21 +1,20 @@
 package swd392.eventmanagement.service.event.builder;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
 import swd392.eventmanagement.model.entity.Event;
 import swd392.eventmanagement.model.entity.Image;
-import swd392.eventmanagement.repository.ImageRepository;
+import swd392.eventmanagement.repository.EventRepository;
 
 @Component
 public class ImageBuilder {
 
-    private final ImageRepository imageRepository;
+    private final EventRepository eventRepository;
 
-    public ImageBuilder(ImageRepository imageRepository) {
-        this.imageRepository = imageRepository;
+    public ImageBuilder(EventRepository eventRepository) {
+        this.eventRepository = eventRepository;
     }
 
     /**
@@ -28,19 +27,17 @@ public class ImageBuilder {
      *                  or empty
      */
     public void updateEventImages(Event event, Set<String> imageUrls) {
-        // Delete all existing images associated with this event
-        imageRepository.deleteByEvent(event);
+        event.getImages().clear();
+        eventRepository.flush();
 
         // Add new images if provided
         if (imageUrls != null && !imageUrls.isEmpty()) {
-            Set<Image> images = new HashSet<>();
             for (String imageUrl : imageUrls) {
                 Image image = new Image();
                 image.setEvent(event);
                 image.setUrl(imageUrl);
-                images.add(image);
+                event.getImages().add(image);
             }
-            imageRepository.saveAll(images);
         }
     }
 }

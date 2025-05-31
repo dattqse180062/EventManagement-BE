@@ -8,7 +8,7 @@ import swd392.eventmanagement.model.entity.Role;
 import java.util.List;
 import java.util.Optional;
 
-public interface EventCapacityRepository extends JpaRepository<EventCapacity, EventCapacity.EventCapacityId> {
+public interface EventCapacityRepository extends JpaRepository<EventCapacity, Long> {
     List<EventCapacity> findByEvent(Event event);
 
     List<EventCapacity> findByRole(Role role);

@@ -85,7 +85,7 @@ public class EventBuilder {
         event.setEndTime(request.getEndTime());
         event.setRegistrationStart(request.getRegistrationStart());
         event.setRegistrationEnd(request.getRegistrationEnd());
-        event.setStatus(EventStatus.DRAFT); // New events start as DRAFT
+        event.setStatus(EventStatus.DRAFT);
         event.setCreatedAt(LocalDateTime.now());
         event.setUpdatedAt(LocalDateTime.now());
 
@@ -109,6 +109,8 @@ public class EventBuilder {
         // Required fields (validated in validateEventUpdateRequest)
         event.setName(request.getName());
         event.setDescription(request.getDescription());
+        event.setPosterUrl(request.getPosterUrl());
+        event.setBannerUrl(request.getBannerUrl());
         event.setMode(request.getMode());
         event.setAudience(request.getAudience());
 
