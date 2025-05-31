@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.DepartmentProcessingException;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
+import swd392.eventmanagement.model.dto.response.DepartmentResponse;
 import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.mapper.DepartmentMapper;
@@ -71,4 +72,21 @@ public class DepartmentServiceImpl implements DepartmentService {
 
         departmentRepository.save(department);
     }
+
+    @Override
+    public DepartmentResponse getDepartmentDetailByCode(Long id) {
+       Department department =departmentRepository.findById(id)
+               .orElseThrow(() -> new DepartmentNotFoundException("Department not found"));
+       DepartmentResponse dto = new DepartmentResponse();
+       dto.setId(department.getId());
+       dto.setName(department.getName());
+       dto.setCode(department.getCode());
+       dto.setAvatarUrl(department.getAvatarUrl());
+       dto.setBannerUrl(department.getBannerUrl());
+       dto.setCreatedAt(department.getCreatedAt().toString());
+       dto.setUpdatedAt(department.getUpdatedAt().toString());
+       return dto;
+
+    }
+
 }
