@@ -57,4 +57,6 @@ public class Department {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+
 }

@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
+import swd392.eventmanagement.model.dto.response.DepartmentResponse;
 import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 import swd392.eventmanagement.service.impl.DepartmentServiceImpl;
 
@@ -62,4 +63,27 @@ public class DepartmentController {
         departmentService.updateDepartment(id, request);
         return ResponseEntity.ok(Map.of("message", "Cập nhật phòng ban thành công"));
     }
+
+    @GetMapping("/detail/{id}")
+    @Operation(
+            summary = "Get department detail",
+            description = "Lấy thông tin chi tiết phòng ban theo ID",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Lấy thông tin phòng ban thành công",
+            content = @Content(schema = @Schema(implementation = DepartmentResponse.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Không tìm thấy phòng ban"
+    )
+    public ResponseEntity<DepartmentResponse> getDepartmentDetail(
+            @PathVariable Long id
+    ) {
+        DepartmentResponse dto = departmentService.getDepartmentDetailByCode(id);
+        return ResponseEntity.ok(dto);
+    }
+
 }
