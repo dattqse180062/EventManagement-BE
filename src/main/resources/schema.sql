@@ -343,11 +343,16 @@ CREATE TABLE categories (
 
 -- Event Categories
 CREATE TABLE event_categories (
+    id BIGSERIAL,
     event_id BIGINT NOT NULL,
     category_id BIGINT NOT NULL,
-    PRIMARY KEY (event_id, category_id),
+    priority INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    UNIQUE(event_id, category_id)
 );
 
 -- Roles
@@ -546,6 +551,6 @@ INSERT INTO categories (code, name, description, is_active, created_at, updated_
 ('TRENDING', 'Career Development', 'Events focused on career growth', TRUE, NOW(), NOW());
 
 -- Event Categories
-INSERT INTO event_categories (event_id, category_id) VALUES
-(1, 1),
-(2, 2);
+INSERT INTO event_categories (event_id, category_id, priority, created_at, updated_at) VALUES
+(1, 1, 1, NOW(), NOW()),  -- Event 'Hội thảo Công nghệ' with priority 1
+(2, 2, 2, NOW(), NOW());  -- Event 'Workshop Kỹ năng' with priority 2

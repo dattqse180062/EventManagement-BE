@@ -45,17 +45,18 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
 
     List<Event> findAllByStatusAndEndTimeBefore(EventStatus status, LocalDateTime dateTime);
 
-    @Query(value = "SELECT COUNT(*) FROM events",nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM events", nativeQuery = true)
     long countAllEvents();
 
-    @Query(value = "SELECT COUNT(*) FROM events WHERE status = 'PUBLISHED'",nativeQuery = true )
+    @Query(value = "SELECT COUNT(*) FROM events WHERE status = 'PUBLISHED'", nativeQuery = true)
     long countActiveEvents();
 
-    @Query(value = "SELECT COUNT(*) FROM events WHERE start_time > NOW()",nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM events WHERE start_time > NOW()", nativeQuery = true)
     long countUpcomingEvents();
 
-    //Event registrations over time (by month)
-    @Query(value = "SELECT EXTRACT(MONTH FROM start_time) AS month,COUNT(*) AS count " +"FROM events WHERE EXTRACT (YEAR FROM start_time) =:year GROUP BY month ORDER BY month",nativeQuery = true)
+    // Event registrations over time (by month)
+    @Query(value = "SELECT EXTRACT(MONTH FROM start_time) AS month,COUNT(*) AS count "
+            + "FROM events WHERE EXTRACT (YEAR FROM start_time) =:year GROUP BY month ORDER BY month", nativeQuery = true)
     List<Object[]> countEventsByMonth(int year);
 
     // Event types distribution
@@ -63,4 +64,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
             "WHERE EXTRACT(YEAR FROM e.start_time) = :year GROUP BY et.name", nativeQuery = true)
     List<Object[]> countEventTypesByYear(int year);
 
+    @Query("SELECT e FROM Event e " +
+            "JOIN e.eventCategories ec " +
+            "JOIN ec.category c " +
+            "WHERE c.code = :categoryCode " +
+            "ORDER BY ec.priority DESC")
+    List<Event> findEventsByCategoryCodeOrderByPriority(
+            @Param("categoryCode") String categoryCode);
 }

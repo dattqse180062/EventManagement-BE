@@ -146,4 +146,13 @@ public class EventController {
             @RequestParam EventStatus newStatus) {
         return ResponseEntity.ok(eventService.updateEventStatus(eventId, newStatus, departmentCode));
     }
+
+    @GetMapping("/category/{categoryCode}")
+    @Operation(summary = "Get events by category", description = "Returns a list of events belonging to a specific category", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListDTO.class)))
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - Category not found or no events in this category")
+    public ResponseEntity<?> getEventsByCategory(@PathVariable String categoryCode) {
+        return ResponseEntity.ok(eventService.getEventsByCategory(categoryCode));
+    }
 }

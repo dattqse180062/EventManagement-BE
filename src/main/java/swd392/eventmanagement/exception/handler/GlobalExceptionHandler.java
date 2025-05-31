@@ -28,6 +28,7 @@ import swd392.eventmanagement.exception.TagNotFoundException;
 import swd392.eventmanagement.exception.TagProcessingException;
 import swd392.eventmanagement.exception.ValidationException;
 import swd392.eventmanagement.exception.InvalidStateTransitionException;
+import swd392.eventmanagement.exception.CategoryNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -303,6 +304,17 @@ public class GlobalExceptionHandler {
                                 ex.getMessage(),
                                 request.getDescription(false));
                 return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+
+        @ExceptionHandler(CategoryNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
         }
 
         // Error response class
