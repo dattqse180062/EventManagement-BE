@@ -32,11 +32,7 @@ public class TagBuilder {
      * @throws TagNotFoundException If a tag ID doesn't exist
      */
     public void updateEventTags(Event event, Set<Long> tagIds) {
-        // Clear existing tag associations in the join table
         event.getTags().clear();
-
-        // Make sure to flush the changes to ensure the many-to-many associations are
-        // removed
         eventRepository.flush();
 
         // Add new tags if provided

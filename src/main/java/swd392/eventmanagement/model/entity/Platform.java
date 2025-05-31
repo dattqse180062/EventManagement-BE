@@ -20,7 +20,9 @@ public class Platform {
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
-
     @Column(name = "url")
     private String url;
+
+    @OneToOne(mappedBy = "platform")
+    private Event event;
 }

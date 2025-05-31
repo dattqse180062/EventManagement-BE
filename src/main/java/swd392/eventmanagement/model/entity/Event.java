@@ -32,16 +32,15 @@ public class Event {
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "type_id", nullable = false)
     private EventType type;
 
     @Column(name = "audience", nullable = false)
     @Enumerated(EnumType.STRING)
     private TargetAudience audience = TargetAudience.BOTH;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "location_id", unique = true)
     private Location location;
 
     @Column(name = "start_time", nullable = false)
@@ -75,9 +74,8 @@ public class Event {
     @Column(name = "mode", nullable = false)
     @Enumerated(EnumType.STRING)
     private EventMode mode;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "platform_id")
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "platform_id", unique = true)
     private Platform platform;
 
     @Column(name = "created_at")
@@ -93,8 +91,19 @@ public class Event {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "event_tags", joinColumns = @JoinColumn(name = "event_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<Tag> tags = new HashSet<>();
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Image> images = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "event_categories", joinColumns = @JoinColumn(name = "event_id"), inverseJoinColumns = @JoinColumn(name = "category_id"))
+    private Set<Category> categories = new HashSet<>();
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private Set<EventStaff> eventStaffs = new HashSet<>();
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    private Set<EventCapacity> eventCapacities = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {

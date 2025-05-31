@@ -1,49 +1,33 @@
 package swd392.eventmanagement.model.entity;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.*;
-import java.io.Serializable;
 
 @Entity
-@Table(name = "event_capacity")
+@Table(name = "event_capacity", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "event_id", "role_id" })
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventCapacity {
 
-    @EmbeddedId
-    private EventCapacityId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @ManyToOne
-    @MapsId("eventId")
-    @JoinColumn(name = "event_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @ManyToOne
-    @MapsId("roleId")
-    @JoinColumn(name = "role_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
     @Column(name = "capacity", nullable = false)
     private Integer capacity;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Embeddable
-    public static class EventCapacityId implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        @Column(name = "event_id")
-        private Long eventId;
-
-        @Column(name = "role_id")
-        private Long roleId;
-    }
 }
