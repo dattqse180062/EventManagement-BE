@@ -6,8 +6,8 @@ package swd392.eventmanagement.enums;
 public enum EventStatus {
     DRAFT,
     PUBLISHED,
+    BLOCKED,
     CLOSED,
     CANCELED,
-    COMPLETED,
-    DELETED
+    COMPLETED
 }

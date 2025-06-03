@@ -1,10 +1,12 @@
 package swd392.eventmanagement.service.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import swd392.eventmanagement.exception.UserNotFoundException;
+import swd392.eventmanagement.exception.UserProcessingException;
 import swd392.eventmanagement.model.dto.response.UserDTO;
 import swd392.eventmanagement.model.entity.User;
 import swd392.eventmanagement.model.mapper.UserMapper;
@@ -13,30 +15,54 @@ import swd392.eventmanagement.service.UserService;
 
 @Service
 public class UserServiceImpl implements UserService {
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    @Autowired
-    private UserMapper userMapper;
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+    }
 
     @Override
     public UserDTO getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() ||
-                "anonymousUser".equals(authentication.getPrincipal())) {
-            throw new UsernameNotFoundException("User not authenticated");
+        logger.info("Getting current user information");
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() ||
+                    "anonymousUser".equals(authentication.getPrincipal())) {
+                logger.error("User not authenticated");
+                throw new UserNotFoundException("User not authenticated");
+            }
+
+            String email = authentication.getName();
+            logger.debug("Fetching user with email: {}", email);
+            User user = getUserByEmail(email);
+
+            logger.info("Successfully retrieved information for user: {}", email);
+            return userMapper.toUserDTO(user);
+        } catch (UserNotFoundException e) {
+            // Just rethrow UserNotFoundException without additional processing
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving current user information", e);
+            throw new UserProcessingException("Failed to retrieve user information", e);
         }
-
-        String email = authentication.getName();
-        User user = getUserByEmail(email);
-
-        return userMapper.toUserDTO(user);
     }
 
     @Override
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        try {
+            logger.debug("Looking up user with email: {}", email);
+            return userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+        } catch (UserNotFoundException e) {
+            logger.error("User not found with email: {}", email);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving user with email: {}", email, e);
+            throw new UserProcessingException("Failed to retrieve user by email", e);
+        }
     }
 }

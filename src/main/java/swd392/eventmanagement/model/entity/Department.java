@@ -23,14 +23,20 @@ public class Department {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "code", nullable = false, unique = true, length = 50)
+    @Column(name = "code", nullable = false, unique = true, length = 25)
     private String code;
+
+    @Column(name = "description", length = 100)
+    private String description;
 
     @Column(name = "avatar_url")
     private String avatarUrl;
 
     @Column(name = "banner_url")
     private String bannerUrl;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
 
     @OneToMany(mappedBy = "department")
     private Set<UserDepartmentRole> userDepartmentRoles;
@@ -51,4 +57,6 @@ public class Department {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+
 }

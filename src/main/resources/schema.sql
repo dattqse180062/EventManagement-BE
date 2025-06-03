@@ -1,19 +1,28 @@
 -- Roles
 CREATE TABLE roles (
-    id SERIAL,
+    id BIGSERIAL,
     name VARCHAR(50) NOT NULL UNIQUE,
     PRIMARY KEY (id)
 );
 
 -- Users
 CREATE TABLE users (
-    id SERIAL,
+    id BIGSERIAL,
     full_name VARCHAR(100) NOT NULL,
     provider_id VARCHAR(100),
     email VARCHAR(100) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
+);
+
+-- UserRoles
+CREATE TABLE user_roles (
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
 -- RefreshTokens
@@ -28,18 +37,9 @@ CREATE TABLE refresh_tokens (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- UserRoles
-CREATE TABLE user_roles (
-    user_id BIGINT NOT NULL,
-    role_id BIGINT NOT NULL,
-    PRIMARY KEY (user_id, role_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-);
-
 -- Department Roles
 CREATE TABLE department_roles (
-    id SERIAL,
+    id BIGSERIAL,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     PRIMARY KEY (id)
@@ -47,11 +47,13 @@ CREATE TABLE department_roles (
 
 -- Departments
 CREATE TABLE departments (
-    id SERIAL,
-    name VARCHAR(100) NOT NULL,
-    code VARCHAR(50) NOT NULL UNIQUE,
+    id BIGSERIAL,
+    code VARCHAR(25) NOT NULL UNIQUE,
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(100),
     avatar_url VARCHAR(255),
     banner_url VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
@@ -59,7 +61,7 @@ CREATE TABLE departments (
 
 -- User Department Role Mappings
 CREATE TABLE user_department_roles (
-    id SERIAL,
+    id BIGSERIAL,
     user_id BIGINT NOT NULL,
     department_id BIGINT NOT NULL,
     department_role_id BIGINT NOT NULL,
@@ -68,19 +70,20 @@ CREATE TABLE user_department_roles (
     PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
-    FOREIGN KEY (department_role_id) REFERENCES department_roles(id) ON DELETE CASCADE
+    FOREIGN KEY (department_role_id) REFERENCES department_roles(id) ON DELETE CASCADE,
+    UNIQUE(user_id, department_id, department_role_id)
 );
 
 -- Event Types
 CREATE TABLE event_types (
-    id SERIAL,
+    id BIGSERIAL,
     name VARCHAR(100) NOT NULL,
     PRIMARY KEY (id)
 );
 
 -- Locations
 CREATE TABLE locations (
-    id SERIAL,
+    id BIGSERIAL,
     address VARCHAR(255),
     ward VARCHAR(100),
     district VARCHAR(100),
@@ -90,12 +93,11 @@ CREATE TABLE locations (
 
 -- Platforms
 CREATE TABLE platforms (
-    id SERIAL,
+    id BIGSERIAL,
     name VARCHAR(100) NOT NULL,
     url VARCHAR(255),
     PRIMARY KEY (id)
 );
-
 
 -- Survey Related Enums
 CREATE TYPE survey_status_enum AS ENUM (
@@ -106,7 +108,7 @@ CREATE TYPE survey_status_enum AS ENUM (
 
 -- Surveys
 CREATE TABLE surveys (
-    id SERIAL,
+    id BIGSERIAL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     start_time TIMESTAMP NOT NULL,
@@ -119,6 +121,35 @@ CREATE TABLE surveys (
         start_time < end_time
         AND start_time >= created_at
     )
+);
+
+-- Question Related Enums
+CREATE TYPE question_type_enum AS ENUM (
+    'TEXT',
+    'RADIO',
+    'CHECKBOX',
+    'DROPDOWN',
+    'RATING'
+);
+
+-- Survey Questions
+CREATE TABLE questions (
+    id BIGSERIAL,
+    survey_id BIGINT,
+    type question_type_enum,
+    is_required BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (id),
+    FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE
+);
+
+-- Question Options
+CREATE TABLE options (
+    id BIGSERIAL,
+    question_id BIGINT,
+    text VARCHAR(255),
+    order_num INT,
+    PRIMARY KEY (id),
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 );
 
 -- Target audience Enums
@@ -139,15 +170,15 @@ CREATE TYPE event_mode AS ENUM (
 CREATE TYPE event_status AS ENUM (
     'DRAFT',
     'PUBLISHED',
+    'BLOCKED',
     'CLOSED',
     'CANCELED',
-    'COMPLETED',
-    'DELETED'
+    'COMPLETED'
 );
 
 -- Events
 CREATE TABLE events (
-    id SERIAL,
+    id BIGSERIAL,
     name VARCHAR(100) NOT NULL,
     department_id BIGINT NOT NULL,
     type_id BIGINT NOT NULL,
@@ -177,22 +208,25 @@ CREATE TABLE events (
         start_time < end_time 
         AND registration_start < registration_end
         AND registration_end <= start_time
-    )
+    ),
+    UNIQUE(location_id),
+    UNIQUE(platform_id)
 );
 
 -- Event Capacity
 CREATE TABLE event_capacity (
+    id BIGSERIAL PRIMARY KEY,
     event_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
     capacity INT NOT NULL CHECK (capacity >= 0),
-    PRIMARY KEY (event_id, role_id),
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    UNIQUE(event_id, role_id)
 );
 
 -- Event Images
 CREATE TABLE images (
-    id SERIAL,
+    id BIGSERIAL,
     event_id BIGINT,
     url VARCHAR(255),
     PRIMARY KEY (id),
@@ -201,7 +235,7 @@ CREATE TABLE images (
 
 -- Tags
 CREATE TABLE tags (
-    id SERIAL,
+    id BIGSERIAL,
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -229,7 +263,7 @@ CREATE TYPE registration_status AS ENUM (
 
 -- Event Registrations
 CREATE TABLE registrations (
-    id SERIAL,
+    id BIGSERIAL,
     user_id BIGINT NOT NULL,
     event_id BIGINT NOT NULL,
     checkin_url VARCHAR(255),
@@ -241,53 +275,26 @@ CREATE TABLE registrations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
-);
-
--- Question Related Enums
-CREATE TYPE question_type_enum AS ENUM (
-    'TEXT',
-    'RADIO',
-    'CHECKBOX',
-    'DROPDOWN',
-    'RATING'
-);
-
--- Survey Questions
-CREATE TABLE questions (
-    id SERIAL,
-    survey_id BIGINT,
-    type question_type_enum,
-    is_required BOOLEAN DEFAULT FALSE,
-    PRIMARY KEY (id),
-    FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE
-);
-
--- Question Options
-CREATE TABLE options (
-    id SERIAL,
-    question_id BIGINT,
-    text VARCHAR(255),
-    order_num INT,
-    PRIMARY KEY (id),
-    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    UNIQUE(user_id, event_id)
 );
 
 -- Survey Responses
 CREATE TABLE responses (
-    id SERIAL,
+    id BIGSERIAL,
     survey_id BIGINT,
     registration_id BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE,
-    FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE
+    FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE,
+    UNIQUE(survey_id, registration_id)
 );
 
 -- Survey Answers
 CREATE TABLE answers (
-    id SERIAL,
+    id BIGSERIAL,
     response_id BIGINT,
     question_id BIGINT,
     option_id BIGINT,
@@ -295,21 +302,58 @@ CREATE TABLE answers (
     PRIMARY KEY (id),
     FOREIGN KEY (response_id) REFERENCES responses(id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
-    FOREIGN KEY (option_id) REFERENCES options(id) ON DELETE CASCADE
+    FOREIGN KEY (option_id) REFERENCES options(id) ON DELETE CASCADE,
+    UNIQUE(response_id, question_id, option_id)
 );
 
--- Database Indexes
--- The following indexes are created to optimize query performance for frequently accessed columns
-CREATE INDEX idx_events_name ON events(name);
-CREATE INDEX idx_events_start_time ON events(start_time);
-CREATE INDEX idx_events_end_time ON events(end_time);
-CREATE INDEX idx_events_status ON events(status);
-CREATE INDEX idx_events_department_id ON events(department_id);
-CREATE INDEX idx_registrations_user_event ON registrations(user_id, event_id);
-CREATE INDEX idx_registrations_status ON registrations(status);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_tags_name ON tags(name);
-CREATE INDEX idx_types_name ON event_types(name);
+-- Staff Roles
+CREATE TABLE staff_roles (
+    id BIGSERIAL,
+    staff_role_name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    PRIMARY KEY (id)
+);
+
+-- Event Staffs
+CREATE TABLE event_staffs (
+    id BIGSERIAL,
+    event_id BIGINT NOT NULL,
+    staff_id BIGINT NOT NULL,
+    staff_role_id INT NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (staff_role_id) REFERENCES staff_roles(id) ON DELETE RESTRICT,
+    UNIQUE(event_id, staff_id, staff_role_id)
+);
+
+-- Categories
+CREATE TABLE categories (
+    id BIGSERIAL,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+
+-- Event Categories
+CREATE TABLE event_categories (
+    id BIGSERIAL,
+    event_id BIGINT NOT NULL,
+    category_id BIGINT NOT NULL,
+    priority INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    UNIQUE(event_id, category_id)
+);
 
 -- Roles
 INSERT INTO roles (name) VALUES
@@ -323,7 +367,6 @@ INSERT INTO users (email, full_name, provider_id) VALUES
   ('tqdat410@gmail.com', 'ADMIN', 'ADMIN-TEST-01'),
   ('hoangthao2222@gmail.com', 'LECTURER', 'LECTURER-TEST-02'),
   ('tuanhuymai168h@gmail.com', 'ADMIN', 'ADMIN-TEST-02');
-
 
 -- UserRoles
 INSERT INTO user_roles (user_id, role_id)
@@ -353,13 +396,14 @@ INSERT INTO department_roles (name, description) VALUES
 ('STAFF', 'Department Staff');
 
 -- Departments
-INSERT INTO departments (name, code, avatar_url, banner_url, created_at, updated_at) VALUES
-('Phòng Đào tạo', 'DT01', 'dt_avatar.png', 'dt_banner.png', NOW(), NOW()),
-('Phòng Công tác SV', 'CTSV01', 'ctsv_avatar.png', 'ctsv_banner.png', NOW(), NOW());
+INSERT INTO departments (name, code, description, avatar_url, banner_url, is_active, created_at, updated_at) VALUES
+('Phòng Đào tạo', 'DT01', 'Quản lý đào tạo sinh viên', 'https://placebear.com/200/300', 'https://placebear.com/200/300', TRUE, NOW(), NOW()),
+('Phòng Công tác SV', 'CTSV01', 'Quản lý hoạt động sinh viên', 'https://placebear.com/200/300', 'https://placebear.com/200/300', TRUE, NOW(), NOW());
 
 -- UserDepartmentRoles
 INSERT INTO user_department_roles (user_id, department_id, department_role_id, created_at, updated_at) VALUES
 (1, 1, 1, NOW(), NOW()),
+(1, 2, 1, NOW(), NOW()),
 (3, 1, 1, NOW(), NOW()),
 (3, 2, 1, NOW(), NOW());
 
@@ -385,34 +429,34 @@ INSERT INTO platforms (name, url) VALUES
 ('Google Meet', 'https://meet.google.com');
 
 -- Events
-INSERT INTO events (name, department_id, type_id, location_id, start_time, end_time, max_capacity, registration_start, registration_end, poster_url, banner_url, description, survey_id, mode, platform_id, created_at, updated_at, status) VALUES
-('Hội thảo Công nghệ', 1, 1, 1, 
+INSERT INTO events (name, department_id, type_id, audience, location_id, start_time, end_time, max_capacity, registration_start, registration_end, poster_url, banner_url, description, survey_id, mode, platform_id, created_at, updated_at, status) VALUES
+('Hội thảo Công nghệ', 1, 1, 'BOTH', 1, 
     NOW() + INTERVAL '30 days' + INTERVAL '9 hours',
     NOW() + INTERVAL '30 days' + INTERVAL '12 hours',
     100, 
     NOW() + INTERVAL '15 days',
     NOW() + INTERVAL '29 days',
-    'poster1.png', 'banner1.png', 'Hội thảo về công nghệ mới', NULL, 'OFFLINE', NULL, NOW(), NOW(), 'PUBLISHED'),
-('Workshop Kỹ năng', 2, 2, 2, 
+    'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Hội thảo về công nghệ mới', NULL, 'HYBRID', NULL, NOW(), NOW(), 'PUBLISHED'),
+('Workshop Kỹ năng', 2, 2, 'BOTH', 2, 
     NOW() + INTERVAL '60 days' + INTERVAL '14 hours',
     NOW() + INTERVAL '60 days' + INTERVAL '17 hours',
     50, 
     NOW() + INTERVAL '45 days',
     NOW() + INTERVAL '59 days',
-    'poster2.png', 'banner2.png', 'Workshop kỹ năng mềm', NULL, 'ONLINE', 1, NOW(), NOW(), 'PUBLISHED');
+    'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Workshop kỹ năng mềm', NULL, 'HYBRID', 1, NOW(), NOW(), 'PUBLISHED');
 
 -- EventCapacity
 INSERT INTO event_capacity (event_id, role_id, capacity) VALUES
-(1, 2, 20), -- Lecturer
-(1, 3, 80), -- Student
+(1, 2, 20),
+(1, 3, 80),
 (2, 2, 20),
 (2, 3, 30);
 
 -- Images
 INSERT INTO images (event_id, url) VALUES
-(1, 'img1.png'),
-(1, 'img2.png'),
-(2, 'img3.png');
+(1, 'https://placebear.com/200/300'),
+(1, 'https://placebear.com/200/300'),
+(2, 'https://placebear.com/200/300');
 
 -- Tags
 INSERT INTO tags (name, description, is_active, created_at, updated_at) VALUES
@@ -487,3 +531,26 @@ INSERT INTO answers (response_id, question_id, option_id, answer_text) VALUES
     3, 4, 'Hài lòng'
 );
 
+-- Staff Roles
+INSERT INTO staff_roles (staff_role_name, description) VALUES
+('EVENT_MANAGER', 'Manager of the event'),
+('EVENT_CHECKIN', 'Staff check-in for the event'),
+('EVENT_STAFF', 'Staff member for the event');
+
+-- Event Staffs
+INSERT INTO event_staffs (event_id, staff_id, staff_role_id, assigned_at, updated_at) VALUES
+(1, 1, 1, NOW(), NOW()),  -- Event 1, Staff 1, Role 1 (EVENT_MANAGER)
+(1, 2, 2, NOW(), NOW()),  -- Event 1, Staff 2, Role 2 (EVENT_CHECKIN)
+(2, 3, 1, NOW(), NOW()),  -- Event 2, Staff 3, Role 1 (EVENT_MANAGER)
+(2, 4, 2, NOW(), NOW());  -- Event 2, Staff 4, Role 2 (EVENT_CHECKIN)
+
+-- Categories
+INSERT INTO categories (code, name, description, is_active, created_at, updated_at) VALUES
+('HOT', 'Technology', 'Events related to technology', TRUE, NOW(), NOW()),
+('UPCOMING', 'Soft Skills', 'Events for developing soft skills', TRUE, NOW(), NOW()),
+('TRENDING', 'Career Development', 'Events focused on career growth', TRUE, NOW(), NOW());
+
+-- Event Categories
+INSERT INTO event_categories (event_id, category_id, priority, created_at, updated_at) VALUES
+(1, 1, 1, NOW(), NOW()),  -- Event 'Hội thảo Công nghệ' with priority 1
+(2, 2, 2, NOW(), NOW());  -- Event 'Workshop Kỹ năng' with priority 2

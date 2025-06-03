@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import swd392.eventmanagement.enums.EventMode;
+import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.enums.TargetAudience;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class EventListDTO {
 
     private String typeName;
     private TargetAudience audience;
+    private EventStatus status;
 
     private String locationAddress;
     private String locationAddress2;

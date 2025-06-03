@@ -5,18 +5,26 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
 import swd392.eventmanagement.model.dto.response.DepartmentResponse;
+import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 import swd392.eventmanagement.model.entity.Department;
+
+import java.util.List;
 
 @Mapper(componentModel = "Spring")
 public interface DepartmentMapper {
 
     DepartmentMapper INSTANCE = Mappers.getMapper(DepartmentMapper.class);
 
-    //Mapping Từ Request -> Entity
-    Department toEntity(DepartmentRequest departmentRequest );
+    // Mapping Từ Request -> Entity
+    Department toEntity(DepartmentRequest departmentRequest); // Mapping tu Entity ->Response
 
-    //Mapping tu Entity ->Response
     @Mapping(target = "createdAt", expression = "java(department.getCreatedAt().toString())")
     @Mapping(target = "updatedAt", expression = "java(department.getUpdatedAt().toString())")
     DepartmentResponse toResponse(Department department);
+
+    // Mapping Entity -> DepartmentShowDTO
+    DepartmentShowDTO toDepartmentShowDTO(Department department);
+
+    // Mapping List<Entity> -> List<DepartmentShowDTO>
+    List<DepartmentShowDTO> toDepartmentShowDTOList(List<Department> departments);
 }
