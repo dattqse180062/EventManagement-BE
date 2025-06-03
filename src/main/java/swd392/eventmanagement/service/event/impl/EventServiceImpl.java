@@ -197,9 +197,7 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
 
-            if (event.getStatus() == EventStatus.DRAFT
-                    || event.getStatus() == EventStatus.DELETED
-                    || event.getStatus() == EventStatus.CANCELED) {
+            if (event.getStatus() == EventStatus.DRAFT || event.getStatus() == EventStatus.CANCELED) {
                 throw new EventNotFoundException("Event not found with ID: " + eventId);
             }
 
@@ -272,8 +270,8 @@ public class EventServiceImpl implements EventService {
             EventMode mode,
             Long departmentId) {
         try {
-            if (status == EventStatus.CANCELED || status == EventStatus.DRAFT || status == EventStatus.DELETED) {
-                throw new EventProcessingException("Cannot search for events with DRAFT/DELETED/CANCELED status");
+            if (status == EventStatus.CANCELED || status == EventStatus.DRAFT) {
+                throw new EventProcessingException("Cannot search for events with DRAFT/CANCELED status");
             }
 
             Specification<Event> spec = EventSpecification.filter(
@@ -447,7 +445,7 @@ public class EventServiceImpl implements EventService {
             return result;
         } catch (AccessDeniedException | DepartmentNotFoundException | EventNotFoundException
                 | EventTypeNotFoundException | UserNotFoundException | EventRequestValidationException
-                | TagNotFoundException e) {
+                | TagNotFoundException | EventProcessingException e) {
             // Rethrow specific exceptions
             throw e;
         } catch (Exception e) {
@@ -499,6 +497,43 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             logger.error("Error updating status for event with ID: {}", eventId, e);
             throw new EventProcessingException("Failed to update event status", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteEvent(Long eventId, String departmentCode) {
+        logger.info("Deleting event with ID: {} in department: {}", eventId, departmentCode);
+
+        try {
+            if (eventId == null) {
+                throw new IllegalArgumentException("Event ID cannot be null");
+            }
+
+            // Validate user has permission to access events in this department
+            Department department = manageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+            // Get event and validate department access
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
+
+            manageAccessValidator.validateEventDepartmentAccess(event, department, departmentCode);
+
+            // Check that the event is in DRAFT status
+            if (event.getStatus() != EventStatus.DRAFT) {
+                throw new EventProcessingException("Event can only be deleted if it is in DRAFT status");
+            }
+
+            // Delete the event
+            eventRepository.delete(event);
+            logger.info("Successfully deleted event with ID: {} and name: {}", eventId, event.getName());
+        } catch (EventNotFoundException | AccessDeniedException | DepartmentNotFoundException
+                | EventProcessingException e) {
+            // Just rethrow specific exceptions without additional logging
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error deleting event with ID: {}", eventId, e);
+            throw new EventProcessingException("Failed to delete event", e);
         }
     }
 }

@@ -43,4 +43,6 @@ public interface EventService {
     EventDetailsManagementDTO updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest, String departmentCode);
 
     EventUpdateStatusResponse updateEventStatus(Long eventId, EventStatus newStatus, String departmentCode);
+
+    void deleteEvent(Long eventId, String departmentCode);
 }
