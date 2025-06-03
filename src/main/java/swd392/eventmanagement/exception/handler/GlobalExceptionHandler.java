@@ -29,6 +29,7 @@ import swd392.eventmanagement.exception.TagProcessingException;
 import swd392.eventmanagement.exception.ValidationException;
 import swd392.eventmanagement.exception.InvalidStateTransitionException;
 import swd392.eventmanagement.exception.CategoryNotFoundException;
+import swd392.eventmanagement.exception.StaffRoleNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -308,6 +309,17 @@ public class GlobalExceptionHandler {
 
         @ExceptionHandler(CategoryNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(StaffRoleNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleStaffRoleNotFoundException(StaffRoleNotFoundException ex,
                         WebRequest request) {
                 ErrorResponse errorResponse = new ErrorResponse(
                                 HttpStatus.NOT_FOUND.value(),
