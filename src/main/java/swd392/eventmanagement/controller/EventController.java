@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -154,5 +155,18 @@ public class EventController {
     @ApiResponse(responseCode = "404", description = "Not Found - Category not found or no events in this category")
     public ResponseEntity<?> getEventsByCategory(@PathVariable String categoryCode) {
         return ResponseEntity.ok(eventService.getEventsByCategory(categoryCode));
+    }
+
+    @DeleteMapping("/management/{departmentCode}/event/{eventId}")
+    @Operation(summary = "Delete event", description = "Deletes an event in the specified department. Only events in DRAFT status can be deleted.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "204", description = "Event deleted successfully")
+    @ApiResponse(responseCode = "400", description = "Bad Request - Event cannot be deleted (not in DRAFT status)")
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - Event not found")
+    public ResponseEntity<?> deleteEvent(
+            @PathVariable String departmentCode,
+            @PathVariable Long eventId) {
+        eventService.deleteEvent(eventId, departmentCode);
+        return ResponseEntity.noContent().build();
     }
 }

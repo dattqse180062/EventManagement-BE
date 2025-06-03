@@ -9,6 +9,5 @@ public enum EventStatus {
     BLOCKED,
     CLOSED,
     CANCELED,
-    COMPLETED,
-    DELETED
+    COMPLETED
 }
