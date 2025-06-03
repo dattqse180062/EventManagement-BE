@@ -4,8 +4,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,12 +27,22 @@ public class DepartmentController {
 
     private final DepartmentServiceImpl departmentService;
 
-    @PostMapping("/create")
-    public ResponseEntity<Map<String, String>> createDepartment(@RequestBody DepartmentRequest requestDTO) {
-        departmentService.createDepartment(requestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "Tạo phòng ban thành công"));
-    }
+   @PostMapping("")
+   @Operation(
+           summary = "Create a new department",
+           description = "Create a new department with unique code and name",
+           security = @SecurityRequirement(name = "bearerAuth")
+   )
+   @ApiResponse(responseCode = "201",description = "Department created successfully",content = @Content(schema = @Schema(implementation = DepartmentResponse.class)))
+   @ApiResponse(responseCode = "400",description = "Bad Request-Invalid department data supplied")
+   @ApiResponse(responseCode = "403",description = "Forbidden-User does not have permission")
+   @ApiResponse(responseCode = "409",description = "Conflict-Department code or name already exists")
+   public ResponseEntity<DepartmentResponse> createDepartment(@Valid @RequestBody DepartmentRequest requestDTO) {
+       return ResponseEntity
+               .status(HttpStatus.CREATED)
+               .body(departmentService.createDepartment(requestDTO));
+   }
+
 
     @GetMapping
     @Operation(summary = "Get all departments", description = "Returns a list of all departments in the system", security = @SecurityRequirement(name = "bearerAuth"))

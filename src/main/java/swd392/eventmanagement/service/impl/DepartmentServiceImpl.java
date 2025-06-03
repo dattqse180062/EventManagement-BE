@@ -3,7 +3,10 @@ package swd392.eventmanagement.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import swd392.eventmanagement.exception.DepartmentException;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.DepartmentProcessingException;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
@@ -24,17 +27,34 @@ public class DepartmentServiceImpl implements DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
 
+    @Transactional
     @Override
-    public void createDepartment(DepartmentRequest requestDTO) {
+    public DepartmentResponse createDepartment(DepartmentRequest requestDTO) {
+        logger.info("Create new department with code: {} ", requestDTO.getCode());
+
+        // 1. Validate duplicate code
         if (departmentRepository.existsByCode(requestDTO.getCode())) {
-            throw new RuntimeException("Mã phòng ban đã tồn tại");
-        }
-        if (departmentRepository.existsByName(requestDTO.getName())) {
-            throw new RuntimeException("Tên phòng ban đã tồn tại");
+            throw new DepartmentException("Department code already exists");
         }
 
+        // 2. Validate duplicate name
+        if (departmentRepository.existsByName(requestDTO.getName())) {
+            throw new DepartmentException("Department name already exists");
+        }
+
+        // 3. Map từ DTO sang entity
         Department department = departmentMapper.toEntity(requestDTO);
-        departmentRepository.save(department);
+
+        // 4. Lưu entity và lấy lại entity đã lưu (đã có ID)
+        Department savedDepartment = departmentRepository.save(department);
+
+        // 5. Map entity đã lưu sang response DTO
+        DepartmentResponse response = departmentMapper.toResponse(savedDepartment);
+
+        logger.info("Successfully created department ID: {}, code: {}, name: {}",
+                savedDepartment.getId(), savedDepartment.getCode(), savedDepartment.getName());
+
+        return response;
     }
 
     @Override
