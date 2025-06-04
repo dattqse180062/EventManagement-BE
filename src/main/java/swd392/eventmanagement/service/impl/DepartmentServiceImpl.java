@@ -89,16 +89,47 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     public void updateDepartment(Long id, DepartmentRequest request) {
-        Department department = departmentRepository.findById(id)
-                .orElseThrow(() -> new DepartmentNotFoundException("Không tìm thấy phòng ban với ID = " + id));
+       logger.info("Updating department ID: {} with new code : {}", id, request.getCode());
 
-        department.setName(request.getName());
-        department.setCode(request.getCode());
-        department.setAvatarUrl(request.getAvatarUrl());
-        department.setBannerUrl(request.getBannerUrl());
+       try{
+           Department department = departmentRepository.findById(id)
+                   .orElseThrow(() -> new DepartmentNotFoundException("Department not found with ID = "+id));
 
-        departmentRepository.save(department);
-    }
+           //Check if new code already exists for another department
+           if (!department.getCode().equals(request.getCode()) &&
+                   departmentRepository.existsByCode(request.getCode())) {
+               throw new ValidationException("Department code already exists");
+           }
+
+           //Check if the new name already exists for another department
+           if (!department.getName().equals(request.getName()) &&
+                   departmentRepository.existsByName(request.getName())) {
+               throw new ValidationException("Department name already exists");
+           }
+
+           //Update fields
+           department.setName(request.getName());
+           department.setCode(request.getCode());
+           department.setAvatarUrl(request.getAvatarUrl());
+           department.setDescription(request.getDescription());
+           department.setBannerUrl(request.getBannerUrl());
+
+           departmentRepository.save(department);
+
+           logger.info("Department updated successfully - ID: {}, Code: {}, Name: {}",
+                   department.getId(), department.getCode(), department.getName());
+
+       } catch (ValidationException e) {
+           logger.warn("Validation error while updating department ID {}: {}", id, e.getMessage());
+           throw e;
+       } catch (Exception e) {
+           logger.error("Unexpected error occurred while updating department ID: {}", id, e);
+           throw new DepartmentProcessingException("Failed to update department", e);
+       }
+
+       }
+
+
 
     @Override
     public DepartmentResponse getDepartmentDetailByCode(Long id) {
