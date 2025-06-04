@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
 import swd392.eventmanagement.model.dto.response.DepartmentResponse;
@@ -28,6 +29,7 @@ public class DepartmentController {
     private final DepartmentServiceImpl departmentService;
 
    @PostMapping("")
+   @PreAuthorize("hasRole('ROLE_ADMIN')")
    @Operation(
            summary = "Create a new department",
            description = "Create a new department with unique code and name",
@@ -53,28 +55,42 @@ public class DepartmentController {
         return ResponseEntity.ok(departmentService.getAllDepartments());
     }
 
+
     @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('ROLE_LECTURER') or hasRole('ROLE_ADMIN')")
     @Operation(
             summary = "Update department",
-            description = "Cập nhật thông tin phòng ban",
+            description = "Updates department information by ID",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Cập nhật phòng ban thành công",
-            content = @Content(schema = @Schema(implementation = Map.class))
-    )
-    @ApiResponse(
-            responseCode = "404",
-            description = "Không tìm thấy phòng ban"
-    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Department updated successfully",
+                    content = @Content(schema = @Schema(implementation = Map.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad Request - Invalid department data"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Not Found - Department not found"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - User does not have permission"
+            )
+    })
     public ResponseEntity<Map<String, String>> updateDepartment(
             @PathVariable Long id,
-            @RequestBody DepartmentRequest request
+            @Valid @RequestBody DepartmentRequest request
     ) {
         departmentService.updateDepartment(id, request);
-        return ResponseEntity.ok(Map.of("message", "Cập nhật phòng ban thành công"));
+        return ResponseEntity.ok(Map.of("message", "Department updated successfully"));
     }
+
+
 
     @GetMapping("/detail/{id}")
     @Operation(
