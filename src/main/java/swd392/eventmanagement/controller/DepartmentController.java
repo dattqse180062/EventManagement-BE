@@ -92,24 +92,21 @@ public class DepartmentController {
 
 
 
+
     @GetMapping("/detail/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Operation(
             summary = "Get department detail",
-            description = "Lấy thông tin chi tiết phòng ban theo ID",
+            description = "Retrieve detailed information of a department by its ID",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Lấy thông tin phòng ban thành công",
-            content = @Content(schema = @Schema(implementation = DepartmentResponse.class))
-    )
-    @ApiResponse(
-            responseCode = "404",
-            description = "Không tìm thấy phòng ban"
-    )
-    public ResponseEntity<DepartmentResponse> getDepartmentDetail(
-            @PathVariable Long id
-    ) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved department details",
+                    content = @Content(schema = @Schema(implementation = DepartmentResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Access is denied"),
+            @ApiResponse(responseCode = "404", description = "Department not found")
+    })
+    public ResponseEntity<DepartmentResponse> getDepartmentDetail(@PathVariable Long id) {
         DepartmentResponse dto = departmentService.getDepartmentDetailByCode(id);
         return ResponseEntity.ok(dto);
     }

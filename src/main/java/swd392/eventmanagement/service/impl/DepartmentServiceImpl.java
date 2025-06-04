@@ -89,62 +89,73 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     public void updateDepartment(Long id, DepartmentRequest request) {
-       logger.info("Updating department ID: {} with new code : {}", id, request.getCode());
+        logger.info("Updating department ID: {} with new code : {}", id, request.getCode());
 
-       try{
-           Department department = departmentRepository.findById(id)
-                   .orElseThrow(() -> new DepartmentNotFoundException("Department not found with ID = "+id));
+        try {
+            Department department = departmentRepository.findById(id)
+                    .orElseThrow(() -> new DepartmentNotFoundException("Department not found with ID = " + id));
 
-           //Check if new code already exists for another department
-           if (!department.getCode().equals(request.getCode()) &&
-                   departmentRepository.existsByCode(request.getCode())) {
-               throw new ValidationException("Department code already exists");
-           }
+            //Check if new code already exists for another department
+            if (!department.getCode().equals(request.getCode()) &&
+                    departmentRepository.existsByCode(request.getCode())) {
+                throw new ValidationException("Department code already exists");
+            }
 
-           //Check if the new name already exists for another department
-           if (!department.getName().equals(request.getName()) &&
-                   departmentRepository.existsByName(request.getName())) {
-               throw new ValidationException("Department name already exists");
-           }
+            //Check if the new name already exists for another department
+            if (!department.getName().equals(request.getName()) &&
+                    departmentRepository.existsByName(request.getName())) {
+                throw new ValidationException("Department name already exists");
+            }
 
-           //Update fields
-           department.setName(request.getName());
-           department.setCode(request.getCode());
-           department.setAvatarUrl(request.getAvatarUrl());
-           department.setDescription(request.getDescription());
-           department.setBannerUrl(request.getBannerUrl());
+            //Update fields
+            department.setName(request.getName());
+            department.setCode(request.getCode());
+            department.setAvatarUrl(request.getAvatarUrl());
+            department.setDescription(request.getDescription());
+            department.setBannerUrl(request.getBannerUrl());
 
-           departmentRepository.save(department);
+            departmentRepository.save(department);
 
-           logger.info("Department updated successfully - ID: {}, Code: {}, Name: {}",
-                   department.getId(), department.getCode(), department.getName());
+            logger.info("Department updated successfully - ID: {}, Code: {}, Name: {}",
+                    department.getId(), department.getCode(), department.getName());
 
-       } catch (ValidationException e) {
-           logger.warn("Validation error while updating department ID {}: {}", id, e.getMessage());
-           throw e;
-       } catch (Exception e) {
-           logger.error("Unexpected error occurred while updating department ID: {}", id, e);
-           throw new DepartmentProcessingException("Failed to update department", e);
-       }
+        } catch (ValidationException e) {
+            logger.warn("Validation error while updating department ID {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error occurred while updating department ID: {}", id, e);
+            throw new DepartmentProcessingException("Failed to update department", e);
+        }
 
-       }
-
+    }
 
 
     @Override
     public DepartmentResponse getDepartmentDetailByCode(Long id) {
-       Department department =departmentRepository.findById(id)
-               .orElseThrow(() -> new DepartmentNotFoundException("Department not found"));
-       DepartmentResponse dto = new DepartmentResponse();
-       dto.setId(department.getId());
-       dto.setName(department.getName());
-       dto.setCode(department.getCode());
-       dto.setAvatarUrl(department.getAvatarUrl());
-       dto.setBannerUrl(department.getBannerUrl());
-       dto.setCreatedAt(department.getCreatedAt().toString());
-       dto.setUpdatedAt(department.getUpdatedAt().toString());
-       return dto;
+        logger.info("Fetching department details by ID: {}", id);
+        try {
+            Department department = departmentRepository.findById(id)
+                    .orElseThrow(() -> new DepartmentNotFoundException("Department not found with ID = " + id));
+
+            DepartmentResponse dto = new DepartmentResponse();
+            dto.setId(department.getId());
+            dto.setName(department.getName());
+            dto.setCode(department.getCode());
+            dto.setDescription(department.getDescription());
+            dto.setAvatarUrl(department.getAvatarUrl());
+            dto.setBannerUrl(department.getBannerUrl());
+            dto.setCreatedAt(department.getCreatedAt().toString());
+            dto.setUpdatedAt(department.getUpdatedAt().toString());
+
+            logger.info("Fetched department details successfully for ID: {}", id);
+            return dto;
+        } catch (DepartmentNotFoundException e) {
+            logger.warn("Department not found for ID {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error while fetching department details for ID: {}", id, e);
+            throw new DepartmentProcessingException("Failed to fetch department details", e);
+        }
 
     }
-
 }
