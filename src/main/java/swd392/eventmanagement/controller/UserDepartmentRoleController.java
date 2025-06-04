@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,20 +27,21 @@ public class UserDepartmentRoleController {
 
     private final UserDepartmentRoleServiceImpl userDepartmentRoleService;
 
-    @PostMapping("/assign")
+    @PostMapping("")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Operation(
             summary = "Assign role to user in department",
-            description = "Gán vai trò cho người dùng trong phòng ban",
+            description = "Assign a role to a user within a department",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponse(
             responseCode = "201",
-            description = "Vai trò được gán thành công",
+            description = "Role assigned successfully",
             content = @Content(schema = @Schema(implementation = Map.class))
     )
     @ApiResponse(
             responseCode = "404",
-            description = "Không tìm thấy user, department hoặc role"
+            description = "User, department, or role not found"
     )
     public ResponseEntity<Map<String, String>> assignRole(@RequestBody AssignRoleRequest request) {
         userDepartmentRoleService.assignRole(
@@ -48,6 +50,6 @@ public class UserDepartmentRoleController {
                 request.getDepartmentRoleId()
         );
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "Gán vai trò thành công"));
+                .body(Map.of("message", "Role assigned successfully"));
     }
 }
