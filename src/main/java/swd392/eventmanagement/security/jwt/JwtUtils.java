@@ -4,10 +4,10 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
+import swd392.eventmanagement.config.properties.JwtProperties;
 
 import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
@@ -17,11 +17,11 @@ import java.util.Date;
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${app.auth.jwt.secret}")
-    private String jwtSecret;
+    private final JwtProperties jwtProperties;
 
-    @Value("${app.auth.jwt.expiration}")
-    private int jwtExpirationMs;
+    public JwtUtils(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+    }
 
     public String generateJwtToken(Authentication authentication) {
         OAuth2User userPrincipal = (OAuth2User) authentication.getPrincipal();
@@ -30,7 +30,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .expiration(new Date((new Date()).getTime() + jwtProperties.getExpiration()))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -39,13 +39,13 @@ public class JwtUtils {
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .expiration(new Date((new Date()).getTime() + jwtProperties.getExpiration()))
                 .signWith(getSigningKey())
                 .compact();
     }
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
     public String getEmailFromJwtToken(String token) {
@@ -72,4 +72,4 @@ public class JwtUtils {
         }
         return false;
     }
-} 
+}
