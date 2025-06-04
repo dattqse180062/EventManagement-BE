@@ -29,6 +29,7 @@ import swd392.eventmanagement.exception.TagProcessingException;
 import swd392.eventmanagement.exception.ValidationException;
 import swd392.eventmanagement.exception.InvalidStateTransitionException;
 import swd392.eventmanagement.exception.CategoryNotFoundException;
+import swd392.eventmanagement.exception.EventStaffNotFoundException;
 import swd392.eventmanagement.exception.StaffRoleNotFoundException;
 import swd392.eventmanagement.exception.StaffRoleProcessingException;
 
@@ -339,6 +340,17 @@ public class GlobalExceptionHandler {
                                 ex.getMessage(),
                                 request.getDescription(false));
                 return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(EventStaffNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleEventStaffNotFoundException(EventStaffNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
         }
 
         // Error response class

@@ -15,6 +15,7 @@ import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.DuplicateResourceException;
 import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.EventProcessingException;
+import swd392.eventmanagement.exception.EventStaffNotFoundException;
 import swd392.eventmanagement.exception.StaffRoleNotFoundException;
 import swd392.eventmanagement.exception.StaffRoleProcessingException;
 import swd392.eventmanagement.exception.UserNotFoundException;
@@ -202,12 +203,14 @@ public class StaffServiceImpl implements StaffService {
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
 
             // Validate event belongs to the correct department
-            manageAccessValidator.validateEventDepartmentAccess(event, department, departmentCode);
-
-            // Get and validate user
+            manageAccessValidator.validateEventDepartmentAccess(event, department, departmentCode); // Get and validate
+                                                                                                    // user
             User user = userRepository.findByEmail(staffUpdateRequest.getEmail())
                     .orElseThrow(() -> new UserNotFoundException(
                             "User not found with email: " + staffUpdateRequest.getEmail()));
+
+            // Validate that staff is assigned to event
+            eventStaffCreateValidator.validateEventStaffExists(event, user, staffUpdateRequest.getEmail());
 
             // Create and save the updated staff assignments using builder pattern
             Set<EventStaff> eventStaffSet = eventStaffBuilder.updateEventStaffWithRoles(
@@ -250,6 +253,43 @@ public class StaffServiceImpl implements StaffService {
         } catch (Exception e) {
             logger.error("Error updating staff in event with ID: {}", eventId, e);
             throw new EventProcessingException("Failed to update staff in event", e);
+        }
+    }
+
+    @Override
+    public void removeStaff(Long eventId, String departmentCode, String staffEmail) {
+        logger.info("Removing staff with email: {} from event ID: {} and department: {}",
+                staffEmail, eventId, departmentCode);
+
+        try {
+            // Validate user has permission to remove staff from this department
+            Department department = manageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+            // Get and validate event
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
+
+            // Validate event belongs to the correct department
+            manageAccessValidator.validateEventDepartmentAccess(event, department, departmentCode);
+
+            User user = userRepository.findByEmail(staffEmail)
+                    .orElseThrow(() -> new UserNotFoundException("User not found with email: " + staffEmail));
+
+            // Validate that staff is assigned to event
+            eventStaffCreateValidator.validateEventStaffExists(event, user, staffEmail);
+
+            // Remove staff from event
+            eventStaffRepository.deleteByEventAndStaff(event, user);
+
+            logger.info("Successfully removed staff from event - Staff ID: {}, Event ID: {}",
+                    user.getId(), eventId);
+        } catch (EventNotFoundException | UserNotFoundException | AccessDeniedException
+                | DepartmentNotFoundException | EventStaffNotFoundException e) {
+            // Rethrow specific exceptions
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error removing staff from event with ID: {}", eventId, e);
+            throw new EventProcessingException("Failed to remove staff from event", e);
         }
     }
 }
