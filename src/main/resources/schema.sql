@@ -135,7 +135,9 @@ CREATE TYPE question_type_enum AS ENUM (
 -- Survey Questions
 CREATE TABLE questions (
     id BIGSERIAL,
-    survey_id BIGINT,
+    survey_id BIGINT NOT NULL,
+    question TEXT NOT NULL,
+    order_num INT,
     type question_type_enum,
     is_required BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (id),
@@ -145,7 +147,7 @@ CREATE TABLE questions (
 -- Question Options
 CREATE TABLE options (
     id BIGSERIAL,
-    question_id BIGINT,
+    question_id BIGINT NOT NULL,
     text VARCHAR(255),
     order_num INT,
     PRIMARY KEY (id),
@@ -297,7 +299,7 @@ CREATE TABLE answers (
     id BIGSERIAL,
     response_id BIGINT,
     question_id BIGINT,
-    option_id BIGINT,
+    option_id BIGINT NULL,
     answer_text TEXT,
     PRIMARY KEY (id),
     FOREIGN KEY (response_id) REFERENCES responses(id) ON DELETE CASCADE,
@@ -493,10 +495,10 @@ SET survey_id = (
 WHERE e.name IN ('Hội thảo Công nghệ', 'Workshop Kỹ năng');
 
 -- Questions
-INSERT INTO questions (survey_id, type, is_required) VALUES
-(1, 'TEXT', TRUE),
-(1, 'RADIO', FALSE),
-(2, 'RADIO', TRUE);
+INSERT INTO questions (survey_id, question, order_num, type, is_required) VALUES
+(1, 'Bạn đánh giá trải nghiệm của mình như thế nào?', 1, 'TEXT', TRUE),
+(1, 'Bạn đã từng sử dụng dịch vụ của chúng tôi trước đây chưa?', 2, 'RADIO', FALSE),
+(2, 'Bạn có sẵn sàng giới thiệu dịch vụ cho bạn bè không?', 1, 'RADIO', TRUE);
 
 -- Options
 INSERT INTO options (question_id, text, order_num) VALUES
