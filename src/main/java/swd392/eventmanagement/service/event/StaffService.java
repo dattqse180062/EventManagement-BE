@@ -14,4 +14,6 @@ public interface StaffService {
     StaffResponse assignStaff(Long eventId, String departmentCode, StaffManageRequest staffCreateRequest);
 
     StaffResponse updateStaff(Long eventId, String departmentCode, StaffManageRequest staffUpdateRequest);
+
+    void removeStaff(Long eventId, String departmentCode, String staffEmail);
 }

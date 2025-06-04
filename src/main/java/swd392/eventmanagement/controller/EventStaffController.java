@@ -2,12 +2,14 @@ package swd392.eventmanagement.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,7 +25,7 @@ import swd392.eventmanagement.service.event.StaffService;
 
 @RestController
 @RequestMapping("/api/v1/staffs")
-@Tag(name = "Event Staff", description = "Event Staff Management API")
+@Tag(name = "Event Staff", description = "Event Staff API")
 public class EventStaffController {
 
     @Autowired
@@ -72,5 +74,18 @@ public class EventStaffController {
             @PathVariable String departmentCode,
             @PathVariable Long eventId) {
         return ResponseEntity.ok(staffService.getEventStaffs(eventId, departmentCode));
+    }
+
+    @DeleteMapping("/management/{departmentCode}/event/{eventId}")
+    @Operation(summary = "Remove staff from event", description = "Removes a staff member from an event completely", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "204", description = "Staff removed successfully")
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - Event, staff, or department not found")
+    public ResponseEntity<?> removeStaff(
+            @PathVariable String departmentCode,
+            @PathVariable Long eventId,
+            @RequestParam String staffEmail) {
+        staffService.removeStaff(eventId, departmentCode, staffEmail);
+        return ResponseEntity.noContent().build();
     }
 }
