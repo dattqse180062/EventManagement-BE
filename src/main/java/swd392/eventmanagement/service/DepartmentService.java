@@ -8,7 +8,7 @@ import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 
 
 public interface DepartmentService {
-    void createDepartment(DepartmentRequest requestDTO);
+    DepartmentResponse createDepartment(DepartmentRequest requestDTO);
 
     List<DepartmentShowDTO> getAllDepartments();
 

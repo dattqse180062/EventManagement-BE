@@ -7,8 +7,9 @@ import lombok.Setter;
 @Setter
 public class DepartmentResponse {
     private Long id;
-    private String name;
     private String code;
+    private String name;
+    private String description;
     private String avatarUrl;
     private String bannerUrl;
     private String createdAt;

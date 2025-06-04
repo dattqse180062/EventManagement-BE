@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.DepartmentProcessingException;
+import swd392.eventmanagement.exception.ValidationException;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
 import swd392.eventmanagement.model.dto.response.DepartmentResponse;
 import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
@@ -24,17 +26,42 @@ public class DepartmentServiceImpl implements DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
 
+    @Transactional
     @Override
-    public void createDepartment(DepartmentRequest requestDTO) {
-        if (departmentRepository.existsByCode(requestDTO.getCode())) {
-            throw new RuntimeException("Mã phòng ban đã tồn tại");
-        }
-        if (departmentRepository.existsByName(requestDTO.getName())) {
-            throw new RuntimeException("Tên phòng ban đã tồn tại");
-        }
+    public DepartmentResponse createDepartment(DepartmentRequest requestDTO) {
+        logger.info("Creating new department with code: {}", requestDTO.getCode());
 
-        Department department = departmentMapper.toEntity(requestDTO);
-        departmentRepository.save(department);
+        try {
+            // 1. Check for duplicate department code
+            if (departmentRepository.existsByCode(requestDTO.getCode())) {
+                throw new ValidationException("Department code already exists");
+            }
+
+            // 2. Check for duplicate department name
+            if (departmentRepository.existsByName(requestDTO.getName())) {
+                throw new ValidationException("Department name already exists");
+            }
+
+            // 3. Map from DTO to entity
+            Department department = departmentMapper.toEntity(requestDTO);
+
+            // 4. Save entity and retrieve saved entity with ID
+            Department savedDepartment = departmentRepository.save(department);
+
+            // 5. Map saved entity to response DTO
+            DepartmentResponse response = departmentMapper.toResponse(savedDepartment);
+
+            logger.info("Department created successfully - ID: {}, Code: {}, Name: {}",
+                    savedDepartment.getId(), savedDepartment.getCode(), savedDepartment.getName());
+
+            return response;
+        } catch (ValidationException e) {
+            logger.warn("Validation error while creating department: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error occurred while creating department", e);
+            throw new DepartmentProcessingException("Failed to create department", e);
+        }
     }
 
     @Override
