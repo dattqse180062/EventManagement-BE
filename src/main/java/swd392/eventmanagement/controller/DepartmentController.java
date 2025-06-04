@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
+import swd392.eventmanagement.model.dto.request.UpdateDepartmentStatusRequest;
 import swd392.eventmanagement.model.dto.response.DepartmentResponse;
 import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 import swd392.eventmanagement.service.impl.DepartmentServiceImpl;
@@ -110,5 +111,41 @@ public class DepartmentController {
         DepartmentResponse dto = departmentService.getDepartmentDetailByCode(id);
         return ResponseEntity.ok(dto);
     }
+
+    @PutMapping("/update-status/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @Operation(
+            summary = "Update department status",
+            description = "Enable or disable a department by updating its isActive status",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Department status updated successfully",
+                    content = @Content(schema = @Schema(implementation = Map.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad Request - Invalid input"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Not Found - Department not found"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - User does not have permission"
+            )
+    })
+    public ResponseEntity<Map<String, String>> updateDepartmentStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateDepartmentStatusRequest request
+    ) {
+        departmentService.updateStatus(id, request.isActive());
+        return ResponseEntity.ok(Map.of("message", "Department status updated successfully"));
+    }
+
+
 
 }
