@@ -15,4 +15,6 @@ public interface DepartmentService {
     void updateDepartment(Long id, DepartmentRequest request);
 
     DepartmentResponse getDepartmentDetailByCode(Long id);
+
+    void updateStatus(Long id, Boolean status);
 }

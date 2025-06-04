@@ -158,4 +158,23 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
 
     }
+    @Override
+    public void updateStatus(Long id, Boolean status) {
+        logger.info("Updating status for department ID: {}",id);
+
+        try {
+            Department department = departmentRepository.findById(id)
+                    .orElseThrow(() -> new DepartmentNotFoundException("Department not found with ID = " + id));
+            department.setIsActive(status);
+            departmentRepository.save(department);
+
+            logger.info("Department ID: {} status updated to isActive={}",id , status);
+        }catch (DepartmentNotFoundException e) {
+            logger.warn("Department not found for ID {}: {}", id, e.getMessage());
+            throw e;
+        }catch (Exception e) {
+            logger.error("Unexpected error while updating status for department ID: {}", id, e);
+            throw new DepartmentProcessingException("Failed to update status", e);
+        }
+    }
 }
