@@ -72,13 +72,35 @@ public class TagController {
                 return ResponseEntity.ok(tagService.getActiveTags());
         }
 
-        @PutMapping("/update/{id}")
-        @Operation(summary = "Update tag", description = "Cập nhật thông tin tag theo ID", security = @SecurityRequirement(name = "bearerAuth"))
-        @ApiResponse(responseCode = "200", description = "Cập nhật tag thành công")
-        @ApiResponse(responseCode = "404", description = "Không tìm thấy tag")
-        public ResponseEntity<Map<String, String>> updateTag(@PathVariable Long id, @RequestBody TagRequest request) {
+        @PutMapping("/{id}")
+        @PreAuthorize("hasRole('ROLE_ADMIN')")
+        @Operation(
+                summary = "Update tag",
+                description = "Update an existing tag by its ID",
+                security = @SecurityRequirement(name = "bearerAuth")
+        )
+        @ApiResponse(
+                responseCode = "200",
+                description = "Tag updated successfully",
+                content = @Content(schema = @Schema(implementation = Map.class))
+        )
+        @ApiResponse(
+                responseCode = "400",
+                description = "Bad Request - Invalid tag data or tag name already exists"
+        )
+        @ApiResponse(
+                responseCode = "403",
+                description = "Forbidden - User does not have permission"
+        )
+        @ApiResponse(
+                responseCode = "404",
+                description = "Not Found - Tag with given ID does not exist"
+        )
+        public ResponseEntity<Map<String, String>> updateTag(
+                @PathVariable Long id,
+                @Valid @RequestBody TagRequest request) {
                 tagService.updateTag(id, request);
-                return ResponseEntity.ok(Map.of("message", "Cập nhật tag thành công"));
+                return ResponseEntity.ok(Map.of("message", "Tag updated successfully"));
         }
 
         @PutMapping("disable/{id}")

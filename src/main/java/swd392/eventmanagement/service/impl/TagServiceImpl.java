@@ -94,11 +94,32 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public void updateTag(Long id, TagRequest request) {
-        Tag tag = tagRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tag không tồn tại"));
-        tag.setName(request.getName());
-        tag.setDescription(request.getDescription());
-        tagRepository.save(tag);
+        logger.info("Updating tag with id: {} " + id);
+        try{
+            //Find tag by ID
+            Tag tag = tagRepository.findById(id)
+                    .orElseThrow(() -> new TagNotFoundException("Tag not found with id: " + id));
+
+            //Check if name already exist and not the same tag
+            if(tagRepository.existsByName(request.getName())&& !tag.getName().equals(request.getName())) {
+                throw new ValidationException("Tag name already exists");
+            }
+
+            //Update fields
+            tag.setName(request.getName());
+            tag.setDescription(request.getDescription());
+
+            //Save updated tag
+            tagRepository.save(tag);
+
+            logger.info("Tag updated successfully - ID: {}, Name: {}", tag.getId(), tag.getName());
+        } catch (ValidationException e) {
+            logger.warn("Validation failed while updating tag: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error occurred while updating tag", e);
+            throw new TagProcessingException("Failed to update tag", e);
+        }
     }
 
 }
