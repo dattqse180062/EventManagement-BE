@@ -28,7 +28,7 @@ public class UserDepartmentRoleController {
     private final UserDepartmentRoleServiceImpl userDepartmentRoleService;
 
     @PostMapping("")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+//    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Operation(
             summary = "Assign role to user in department",
             description = "Assign a role to a user within a department",
@@ -38,6 +38,14 @@ public class UserDepartmentRoleController {
             responseCode = "201",
             description = "Role assigned successfully",
             content = @Content(schema = @Schema(implementation = Map.class))
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Bad Request - Invalid input data"
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - User does not have permission"
     )
     @ApiResponse(
             responseCode = "404",

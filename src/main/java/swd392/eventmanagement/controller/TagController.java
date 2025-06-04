@@ -6,10 +6,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,14 +34,33 @@ public class TagController {
 
         private final TagServiceImpl tagService;
 
-        @PostMapping("/create")
-        @Operation(summary = "Create new tag", description = "Tạo một thẻ mới trong hệ thống", security = @SecurityRequirement(name = "bearerAuth"))
-        @ApiResponse(responseCode = "201", description = "Tạo tag thành công", content = @Content(schema = @Schema(implementation = Map.class)))
-        @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ hoặc tag đã tồn tại")
-        public ResponseEntity<Map<String, String>> createTag(@RequestBody TagRequest request) {
-                tagService.createTag(request);
-                return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(Map.of("message", "Tạo tag thành công"));
+        @PostMapping("")
+        @PreAuthorize("hasRole('ROLE_ADMIN')")
+        @Operation(
+                summary = "Create new tag",
+                description = "Creates a new tag in the system",
+                security = @SecurityRequirement(name = "bearerAuth")
+        )
+        @ApiResponse(
+                responseCode = "201",
+                description = "Tag created successfully",
+                content = @Content(schema = @Schema(implementation = TagShowDTO.class))
+        )
+        @ApiResponse(
+                responseCode = "400",
+                description = "Bad Request - Invalid tag data or tag already exists"
+        )
+        @ApiResponse(
+                responseCode = "403",
+                description = "Forbidden - User does not have permission"
+        )
+        @ApiResponse(
+                responseCode = "404",
+                description = "Not Found"
+        )
+        public ResponseEntity<TagShowDTO> createTag(@Valid @RequestBody TagRequest request) {
+                TagShowDTO createdTag = tagService.createTag(request);
+                return ResponseEntity.status(HttpStatus.CREATED).body(createdTag);
         }
 
         @GetMapping("/active")
