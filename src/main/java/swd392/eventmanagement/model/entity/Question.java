@@ -24,6 +24,12 @@ public class Question {
     @JoinColumn(name = "survey_id")
     private Survey survey;
 
+    @Column(name = "question", nullable = false)
+    private String question;
+
+    @Column(name = "order_num")
+    private Integer orderNum;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private QuestionType type;
