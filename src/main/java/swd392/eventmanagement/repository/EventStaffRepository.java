@@ -21,4 +21,8 @@ public interface EventStaffRepository extends JpaRepository<EventStaff, Long> {
     boolean existsByEventAndStaff(Event event, User staff);
 
     boolean existsByEventAndStaffAndStaffRole(Event event, User staff, StaffRole staffRole);
+
+    void deleteByEventAndStaff(Event event, User staff);
+
+    List<EventStaff> findByEventAndStaff(Event event, User staff);
 }
