@@ -8,11 +8,13 @@ import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 
 
 public interface DepartmentService {
-    void createDepartment(DepartmentRequest requestDTO);
+    DepartmentResponse createDepartment(DepartmentRequest requestDTO);
 
     List<DepartmentShowDTO> getAllDepartments();
 
     void updateDepartment(Long id, DepartmentRequest request);
 
     DepartmentResponse getDepartmentDetailByCode(Long id);
+
+    void updateStatus(Long id, Boolean status);
 }

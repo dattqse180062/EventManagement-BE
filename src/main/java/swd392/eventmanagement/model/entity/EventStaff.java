@@ -42,7 +42,7 @@ public class EventStaff {
 
     @PrePersist
     protected void onCreate() {
-        assignedAt = LocalDateTime.now();
+        // assignedAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 

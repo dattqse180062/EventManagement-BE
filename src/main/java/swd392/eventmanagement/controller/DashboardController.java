@@ -7,6 +7,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.response.DashboardStats;
 import swd392.eventmanagement.model.dto.response.MonthlyEventCount;
@@ -23,64 +26,58 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
 
-    // 1. Tổng quan dashboard
     @GetMapping("/stats")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Operation(
-            summary = "Lấy thống kê tổng quan dashboard",
-            description = "Trả về các thống kê tổng quan như tổng số sự kiện, người dùng,...",
+            summary = "Get dashboard overview statistics",
+            description = "Returns overview statistics such as total events, users, etc.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Thống kê dashboard được trả về thành công",
-            content = @Content(schema = @Schema(implementation = DashboardStats.class))
-    )
-    @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - Người dùng không có quyền truy cập"
-    )
-    public DashboardStats getDashboardStats() {
-        return dashboardService.getDashboardStats();
+    @ApiResponse(responseCode = "200", description = "Dashboard statistics successfully returned", content = @Content(schema = @Schema(implementation = DashboardStats.class)))
+    @ApiResponse(responseCode = "403", description = "Forbidden - user does not have access rights")
+    @ApiResponse(responseCode = "404", description = "Dashboard data not found")
+    public ResponseEntity<DashboardStats> getDashboardStats() {
+        DashboardStats stats = dashboardService.getDashboardStats();
+        if (stats == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(stats);
     }
 
-    // 2. Số lượng event theo tháng của 1 năm
     @GetMapping("/events-by-month")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Operation(
-            summary = "Lấy số lượng sự kiện theo tháng",
-            description = "Trả về số lượng sự kiện từng tháng trong một năm cụ thể",
+            summary = "Get number of events by month",
+            description = "Returns the count of events per month in a specific year",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Danh sách sự kiện theo tháng được trả về thành công",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = MonthlyEventCount.class)))
-    )
-    @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - Người dùng không có quyền truy cập"
-    )
-    public List<MonthlyEventCount> getEventsByMonth(@RequestParam int year) {
-        return dashboardService.getEventsByMonth(year);
+    @ApiResponse(responseCode = "200", description = "Monthly event counts successfully returned", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MonthlyEventCount.class))))
+    @ApiResponse(responseCode = "403", description = "Forbidden - user does not have access rights")
+    @ApiResponse(responseCode = "404", description = "No events found for the given year")
+    public ResponseEntity<List<MonthlyEventCount>> getEventsByMonth(@RequestParam int year) {
+        List<MonthlyEventCount> monthlyCounts = dashboardService.getEventsByMonth(year);
+        if (monthlyCounts == null || monthlyCounts.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(monthlyCounts);
     }
 
-    // 3. Phân bố loại event theo năm
     @GetMapping("/event-types-distribution")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Operation(
-            summary = "Phân bố loại sự kiện theo năm",
-            description = "Trả về phân bố số lượng các loại sự kiện trong một năm cụ thể",
+            summary = "Get event types distribution",
+            description = "Returns the distribution of event types in a specific year",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Phân bố loại sự kiện được trả về thành công",
-            content = @Content(schema = @Schema(implementation = Map.class))
-    )
-    @ApiResponse(
-            responseCode = "403",
-            description = "Forbidden - Người dùng không có quyền truy cập"
-    )
-    public Map<String, Long> getEventTypesDistribution(@RequestParam int year) {
-        return dashboardService.getEventTypesDistribution(year);
+    @ApiResponse(responseCode = "200", description = "Event types distribution successfully returned", content = @Content(schema = @Schema(implementation = Map.class)))
+    @ApiResponse(responseCode = "403", description = "Forbidden - user does not have access rights")
+    @ApiResponse(responseCode = "404", description = "No event types found for the given year")
+    public ResponseEntity<Map<String, Long>> getEventTypesDistribution(@RequestParam int year) {
+        Map<String, Long> distribution = dashboardService.getEventTypesDistribution(year);
+        if (distribution == null || distribution.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(distribution);
     }
 
 }

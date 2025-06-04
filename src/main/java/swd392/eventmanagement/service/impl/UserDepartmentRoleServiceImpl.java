@@ -1,10 +1,13 @@
 package swd392.eventmanagement.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
 import swd392.eventmanagement.exception.DepartmentRoleNotFoundException;
 import swd392.eventmanagement.exception.UserNotFoundException;
+import swd392.eventmanagement.exception.ValidationException;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.entity.DepartmentRole;
 import swd392.eventmanagement.model.entity.User;
@@ -15,8 +18,7 @@ import swd392.eventmanagement.repository.UserDepartmentRoleRepository;
 import swd392.eventmanagement.repository.UserRepository;
 import swd392.eventmanagement.service.UserDepartmentRoleService;
 
-import java.util.List;
-import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -26,38 +28,44 @@ public class UserDepartmentRoleServiceImpl implements UserDepartmentRoleService 
     private final DepartmentRepository departmentRepository;
     private final DepartmentRoleRepository departmentRoleRepository;
     private final UserDepartmentRoleRepository userDepartmentRoleRepository;
+    private static final Logger logger = LoggerFactory.getLogger(UserDepartmentRoleServiceImpl.class);
 
     @Override
     public UserDepartmentRole assignRole(Long userId, Long departmentId, Long departmentRoleId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        logger.info("Assigning role ID: {} to user ID: {} in department ID: {}", departmentRoleId, userId, departmentId);
 
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new DepartmentNotFoundException("Department not found"));
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
-        DepartmentRole departmentRole = departmentRoleRepository.findById(departmentRoleId)
-                .orElseThrow(() -> new DepartmentRoleNotFoundException("Department role not found"));
+            Department department = departmentRepository.findById(departmentId)
+                    .orElseThrow(() -> new DepartmentNotFoundException("Department not found with ID: " + departmentId));
 
-        // Lấy tất cả các bản ghi liên quan tới user này
-        List<UserDepartmentRole> userRoles = userDepartmentRoleRepository.findAll();
+            DepartmentRole departmentRole = departmentRoleRepository.findById(departmentRoleId)
+                    .orElseThrow(() -> new DepartmentRoleNotFoundException("Department role not found with ID: " + departmentRoleId));
 
-        // Kiểm tra xem đã tồn tại tổ hợp rồi chưa
-        boolean exists = userRoles.stream().anyMatch(udr ->
-                udr.getUser().getId().equals(userId)
-                        && udr.getDepartment().getId().equals(departmentId)
-                        && udr.getDepartmentRole().getId().equals(departmentRoleId)
-        );
+            boolean exists = userDepartmentRoleRepository.existsByUserAndDepartmentAndDepartmentRole(user, department, departmentRole);
 
-        if (exists) {
-            throw new IllegalStateException("User already assigned to this department and role.");
+            if (exists) {
+                throw new ValidationException("User already assigned to this department and role.");
+            }
+
+            UserDepartmentRole userDepartmentRole = new UserDepartmentRole();
+            userDepartmentRole.setUser(user);
+            userDepartmentRole.setDepartment(department);
+            userDepartmentRole.setDepartmentRole(departmentRole);
+
+            UserDepartmentRole saved = userDepartmentRoleRepository.save(userDepartmentRole);
+
+            logger.info("Successfully assigned role ID: {} to user ID: {} in department ID: {}", departmentRoleId, userId, departmentId);
+
+            return saved;
+        } catch (ValidationException e) {
+            logger.warn("Validation error during assigning role: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error during assigning role", e);
+            throw new RuntimeException("Failed to assign role", e);
         }
-
-        // Nếu chưa có, tạo mới
-        UserDepartmentRole userDepartmentRole = new UserDepartmentRole();
-        userDepartmentRole.setUser(user);
-        userDepartmentRole.setDepartment(department);
-        userDepartmentRole.setDepartmentRole(departmentRole);
-
-        return userDepartmentRoleRepository.save(userDepartmentRole);
     }
 }

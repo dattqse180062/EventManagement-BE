@@ -10,24 +10,7 @@ import org.springframework.web.context.request.WebRequest;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.Data;
-import swd392.eventmanagement.exception.TokenRefreshException;
-import swd392.eventmanagement.exception.InvalidGoogleTokenException;
-import swd392.eventmanagement.exception.UnauthorizedDomainException;
-import swd392.eventmanagement.exception.EventNotFoundException;
-import swd392.eventmanagement.exception.EventProcessingException;
-import swd392.eventmanagement.exception.EventRegistrationConflictException;
-import swd392.eventmanagement.exception.EventRequestValidationException;
-import swd392.eventmanagement.exception.UserProcessingException;
-import swd392.eventmanagement.exception.UserNotFoundException;
-import swd392.eventmanagement.exception.AccessDeniedException;
-import swd392.eventmanagement.exception.DepartmentNotFoundException;
-import swd392.eventmanagement.exception.DepartmentProcessingException;
-import swd392.eventmanagement.exception.EventTypeNotFoundException;
-import swd392.eventmanagement.exception.EventTypeProcessingException;
-import swd392.eventmanagement.exception.TagNotFoundException;
-import swd392.eventmanagement.exception.TagProcessingException;
-import swd392.eventmanagement.exception.ValidationException;
-import swd392.eventmanagement.exception.InvalidStateTransitionException;
+import swd392.eventmanagement.exception.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -304,6 +287,61 @@ public class GlobalExceptionHandler {
                                 request.getDescription(false));
                 return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
+
+        @ExceptionHandler(CategoryNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(StaffRoleNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleStaffRoleNotFoundException(StaffRoleNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(StaffRoleProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleStaffRoleProcessingException(StaffRoleProcessingException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(EventStaffNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleEventStaffNotFoundException(EventStaffNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(DashboardProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleDashboardProcessingException(DashboardProcessingException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        LocalDateTime.now(),
+                        ex.getMessage(),
+                        request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
 
         // Error response class
         @Data

@@ -8,4 +8,5 @@ public class DepartmentRequest {
     private String code;
     private String avatarUrl;
     private String bannerUrl;
+    private String description;
 }

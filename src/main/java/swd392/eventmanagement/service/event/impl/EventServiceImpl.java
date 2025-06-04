@@ -3,7 +3,6 @@ package swd392.eventmanagement.service.event.impl;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
-
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +21,8 @@ import swd392.eventmanagement.service.event.builder.PlatformBuilder;
 import swd392.eventmanagement.service.event.builder.TagBuilder;
 import swd392.eventmanagement.service.event.validator.EventCreateValidator;
 import swd392.eventmanagement.service.event.validator.EventManageAccessValidator;
+import swd392.eventmanagement.exception.CategoryNotFoundException;
+import swd392.eventmanagement.repository.CategoryRepository;
 import swd392.eventmanagement.service.event.validator.EventUpdateValidator;
 import swd392.eventmanagement.service.event.status.EventStatusStateMachine;
 import swd392.eventmanagement.enums.EventMode;
@@ -65,6 +66,7 @@ public class EventServiceImpl implements EventService {
     private final EventUpdateValidator updateValidator;
     private final EventManageAccessValidator manageAccessValidator;
     private final EventStatusStateMachine eventStatusStateMachine;
+    private final CategoryRepository categoryRepository;
 
     public EventServiceImpl(
             EventRepository eventRepository,
@@ -80,7 +82,8 @@ public class EventServiceImpl implements EventService {
             TagBuilder tagBuilder,
             ImageBuilder imageBuilder,
             EventManageAccessValidator manageValidator,
-            EventStatusStateMachine eventStatusStateMachine) {
+            EventStatusStateMachine eventStatusStateMachine,
+            CategoryRepository categoryRepository) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.registrationRepository = registrationRepository;
@@ -91,6 +94,7 @@ public class EventServiceImpl implements EventService {
         this.updateValidator = updateValidator;
         this.manageAccessValidator = manageValidator;
         this.eventStatusStateMachine = eventStatusStateMachine;
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
@@ -123,6 +127,35 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             logger.error("Error retrieving available events", e);
             throw new EventProcessingException("Failed to retrieve available events", e);
+        }
+    }
+
+    @Override
+    public List<EventListDTO> getEventsByCategory(String categoryCode) {
+        logger.info("Getting events for category code: {}", categoryCode);
+        try {
+            // Get category by code to verify it exists
+            if (!categoryRepository.existsByCode(categoryCode)) {
+                throw new CategoryNotFoundException("Category not found with code: " + categoryCode);
+            }
+
+            // Get events directly from database, sorted by priority
+            List<Event> events = eventRepository.findEventsByCategoryCodeOrderByPriority(categoryCode);
+
+            if (events.isEmpty()) {
+                logger.info("No events found for category code: {}", categoryCode);
+                throw new EventNotFoundException("No events found for category with code: " + categoryCode);
+            }
+
+            logger.info("Found {} events for category code: {}", events.size(), categoryCode);
+            return eventMapper.toDTOList(events);
+
+        } catch (CategoryNotFoundException | EventNotFoundException e) {
+            // Just rethrow these exceptions without additional logging
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving events for category code: {}", categoryCode, e);
+            throw new EventProcessingException("Failed to retrieve category events", e);
         }
     }
 
@@ -164,9 +197,7 @@ public class EventServiceImpl implements EventService {
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
 
-            if (event.getStatus() == EventStatus.DRAFT
-                    || event.getStatus() == EventStatus.DELETED
-                    || event.getStatus() == EventStatus.CANCELED) {
+            if (event.getStatus() == EventStatus.DRAFT || event.getStatus() == EventStatus.CANCELED) {
                 throw new EventNotFoundException("Event not found with ID: " + eventId);
             }
 
@@ -239,8 +270,8 @@ public class EventServiceImpl implements EventService {
             EventMode mode,
             Long departmentId) {
         try {
-            if (status == EventStatus.CANCELED || status == EventStatus.DRAFT || status == EventStatus.DELETED) {
-                throw new EventProcessingException("Cannot search for events with DRAFT/DELETED/CANCELED status");
+            if (status == EventStatus.CANCELED || status == EventStatus.DRAFT) {
+                throw new EventProcessingException("Cannot search for events with DRAFT/CANCELED status");
             }
 
             Specification<Event> spec = EventSpecification.filter(
@@ -414,7 +445,7 @@ public class EventServiceImpl implements EventService {
             return result;
         } catch (AccessDeniedException | DepartmentNotFoundException | EventNotFoundException
                 | EventTypeNotFoundException | UserNotFoundException | EventRequestValidationException
-                | TagNotFoundException e) {
+                | TagNotFoundException | EventProcessingException e) {
             // Rethrow specific exceptions
             throw e;
         } catch (Exception e) {
@@ -466,6 +497,43 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             logger.error("Error updating status for event with ID: {}", eventId, e);
             throw new EventProcessingException("Failed to update event status", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteEvent(Long eventId, String departmentCode) {
+        logger.info("Deleting event with ID: {} in department: {}", eventId, departmentCode);
+
+        try {
+            if (eventId == null) {
+                throw new IllegalArgumentException("Event ID cannot be null");
+            }
+
+            // Validate user has permission to access events in this department
+            Department department = manageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+            // Get event and validate department access
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + eventId));
+
+            manageAccessValidator.validateEventDepartmentAccess(event, department, departmentCode);
+
+            // Check that the event is in DRAFT status
+            if (event.getStatus() != EventStatus.DRAFT) {
+                throw new EventProcessingException("Event can only be deleted if it is in DRAFT status");
+            }
+
+            // Delete the event
+            eventRepository.delete(event);
+            logger.info("Successfully deleted event with ID: {} and name: {}", eventId, event.getName());
+        } catch (EventNotFoundException | AccessDeniedException | DepartmentNotFoundException
+                | EventProcessingException e) {
+            // Just rethrow specific exceptions without additional logging
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error deleting event with ID: {}", eventId, e);
+            throw new EventProcessingException("Failed to delete event", e);
         }
     }
 }
