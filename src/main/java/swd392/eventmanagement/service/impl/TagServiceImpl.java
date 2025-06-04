@@ -85,13 +85,26 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @Transactional
     public void deleteTag(Long tagId) {
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new TagNotFoundException("Không tìm thấy tag " ));
-        tag.setIsActive(false);
-        tagRepository.save(tag);
-    }
+        logger.info("Deleting tag with ID: {}", tagId);
 
+        try {
+            Tag tag = tagRepository.findById(tagId)
+                    .orElseThrow(() -> new TagNotFoundException("Tag not found with ID: " + tagId));
+
+            tag.setIsActive(false);
+            tagRepository.save(tag);
+
+            logger.info("Tag with ID: {} has been marked as inactive", tagId);
+        } catch (TagNotFoundException e) {
+            logger.warn("Delete failed: {}", e.getMessage());
+            throw e; // propagate để controller xử lý trả về 404
+        } catch (Exception e) {
+            logger.error("Unexpected error occurred while deleting tag", e);
+            throw new TagProcessingException("Failed to delete tag", e);
+        }
+    }
     @Override
     public void updateTag(Long id, TagRequest request) {
         logger.info("Updating tag with id: {} " + id);

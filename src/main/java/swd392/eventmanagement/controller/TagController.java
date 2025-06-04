@@ -12,13 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import swd392.eventmanagement.model.dto.request.TagRequest;
 import swd392.eventmanagement.model.dto.response.TagShowDTO;
@@ -103,13 +97,20 @@ public class TagController {
                 return ResponseEntity.ok(Map.of("message", "Tag updated successfully"));
         }
 
-        @PutMapping("disable/{id}")
-        @Operation(summary = "Disable tag (soft delete)",description = "Đặt isActive = false để vô hiệu hóa tag",security = @SecurityRequirement(name ="bearerAuth"))
-        @ApiResponse(responseCode = "200",description = "Vô hiệu hóa tag thành công",content = @Content(schema = @Schema(implementation = Map.class)))
-        @ApiResponse(responseCode = "404",description = "Không tìm thấy tag")
-        public ResponseEntity<Map<String,String>> disableTag(@PathVariable Long id){
-               tagService.deleteTag(id); // Hàm gắn isActive = false
-               return ResponseEntity.ok(Map.of("message","Vô hiệu hóa thành công"));
+        @DeleteMapping("/{id}")
+        @PreAuthorize("hasRole('ROLE_ADMIN')")
+        @Operation(
+                summary = "Delete a tag",
+                description = "Soft deletes a tag by setting it inactive",
+                security = @SecurityRequirement(name = "bearerAuth")
+        )
+        @ApiResponse(responseCode = "200", description = "Tag deleted successfully", content = @Content(schema = @Schema(implementation = Map.class)))
+        @ApiResponse(responseCode = "404", description = "Tag not found")
+        @ApiResponse(responseCode = "403", description = "Forbidden- User does not have permission")
+        @ApiResponse(responseCode = "400", description = "Bad Request - Invalid data")
+        public ResponseEntity<Map<String, String>> deleteTag(@PathVariable Long id) {
+                tagService.deleteTag(id);
+                return ResponseEntity.ok(Map.of("message", "Tag deleted successfully"));
         }
 
 
