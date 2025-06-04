@@ -35,7 +35,6 @@ public class PlatformBuilder {
      */
     public void updateEventPlatform(Event event, PlatformCreateRequest platformRequest) {
         if (platformRequest != null) {
-            // If event already has a platform, update it; otherwise create a new one
             Platform platform;
             if (event.getPlatform() != null) {
                 platform = event.getPlatform();
@@ -47,11 +46,8 @@ public class PlatformBuilder {
                 event.setPlatform(platform);
             }
         } else {
-            // For PUT, if no platform provided, remove existing platform from database
             if (event.getPlatform() != null) {
-                Platform platformToDelete = event.getPlatform();
                 event.setPlatform(null);
-                platformRepository.delete(platformToDelete);
             }
         }
     }

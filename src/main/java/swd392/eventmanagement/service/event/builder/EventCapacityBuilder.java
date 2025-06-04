@@ -1,6 +1,5 @@
 package swd392.eventmanagement.service.event.builder;
 
-import java.util.List;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
@@ -52,12 +51,13 @@ public class EventCapacityBuilder {
         // registrations
         roleCapacityValidator.validateRoleCapacitiesAgainstRegistrations(event, roleCapacities, registrationRepository);
 
-        // Remove all existing capacities first
-        List<EventCapacity> existingCapacities = eventCapacityRepository.findByEvent(event);
-        eventCapacityRepository.deleteAll(existingCapacities);
+        event.getEventCapacities().clear();
+        eventCapacityRepository.flush();
 
         // Create new capacities based on audience and provided role capacities
         createEventCapacities(event, roleCapacities, event.getAudience(), event.getMaxCapacity());
+
+        eventCapacityRepository.flush();
     }
 
     /**
@@ -74,7 +74,6 @@ public class EventCapacityBuilder {
             Integer maxCapacity) {
 
         // If no role capacities provided but we know the audience, create default
-        // capacities
         if ((roleCapacities == null || roleCapacities.isEmpty()) && audience != null) {
             if (audience == TargetAudience.STUDENT) {
                 // Create a single capacity for students with the full max capacity
@@ -87,8 +86,7 @@ public class EventCapacityBuilder {
                         .orElseThrow(() -> new EventRequestValidationException("Lecturer role not found"));
                 createSingleCapacity(event, lecturerRole, maxCapacity);
             }
-            return; // Don't continue to create explicit capacities since we've handled the default
-                    // case
+            return;
         }
 
         // Handle explicit role capacities if provided
@@ -103,17 +101,11 @@ public class EventCapacityBuilder {
     private void createSingleCapacity(Event event, Role role, Integer maxCapacity) {
         EventCapacity eventCapacity = new EventCapacity();
 
-        // Initialize the composite ID
-        EventCapacity.EventCapacityId id = new EventCapacity.EventCapacityId();
-        id.setEventId(event.getId());
-        id.setRoleId(role.getId());
-        eventCapacity.setId(id);
-
         eventCapacity.setEvent(event);
         eventCapacity.setRole(role);
         eventCapacity.setCapacity(maxCapacity != null ? maxCapacity : 0);
 
-        eventCapacityRepository.save(eventCapacity);
+        event.getEventCapacities().add(eventCapacity);
     }
 
     /**
@@ -129,19 +121,13 @@ public class EventCapacityBuilder {
                     .orElseThrow(
                             () -> new EventRequestValidationException(
                                     "Role not found with name: " + normalizedRoleName));
-
             EventCapacity eventCapacity = new EventCapacity();
-            // Initialize the composite ID
-            EventCapacity.EventCapacityId id = new EventCapacity.EventCapacityId();
-            id.setEventId(event.getId());
-            id.setRoleId(role.getId());
-            eventCapacity.setId(id);
 
             eventCapacity.setEvent(event);
             eventCapacity.setRole(role);
             eventCapacity.setCapacity(roleCapacityRequest.getMaxCapacity());
 
-            eventCapacityRepository.save(eventCapacity);
+            event.getEventCapacities().add(eventCapacity);
         }
     }
 

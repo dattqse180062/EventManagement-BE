@@ -20,15 +20,15 @@ import swd392.eventmanagement.repository.UserRepository;
 import swd392.eventmanagement.security.service.UserDetailsImpl;
 
 @Component
-public class EventManageValidator {
-    private static final Logger logger = LoggerFactory.getLogger(EventManageValidator.class);
+public class EventManageAccessValidator {
+    private static final Logger logger = LoggerFactory.getLogger(EventManageAccessValidator.class);
 
     private final DepartmentRepository departmentRepository;
     private final UserDepartmentRoleRepository userDepartmentRoleRepository;
     private final DepartmentRoleRepository departmentRoleRepository;
     private final UserRepository userRepository;
 
-    public EventManageValidator(
+    public EventManageAccessValidator(
             DepartmentRepository departmentRepository,
             UserDepartmentRoleRepository userDepartmentRoleRepository,
             DepartmentRoleRepository departmentRoleRepository,
@@ -58,6 +58,12 @@ public class EventManageValidator {
         Department department = departmentRepository.findByCode(departmentCode)
                 .orElseThrow(() -> new DepartmentNotFoundException(
                         "No department found with code: " + departmentCode));
+
+        // Check if department is active
+        if (department.getIsActive() == null || !department.getIsActive()) {
+            logger.warn("Attempted access to inactive department with code: {}", departmentCode);
+            throw new AccessDeniedException("Access denied. Department with code " + departmentCode + " is inactive.");
+        }
 
         // Check if user is HEAD of the department
         if (!isHeadOfDepartment(department)) {

@@ -37,7 +37,6 @@ public class LocationBuilder {
      */
     public void updateEventLocation(Event event, LocationCreateRequest locationRequest) {
         if (locationRequest != null) {
-            // If event already has a location, update it; otherwise create a new one
             Location location;
             if (event.getLocation() != null) {
                 location = event.getLocation();
@@ -51,11 +50,8 @@ public class LocationBuilder {
                 event.setLocation(location);
             }
         } else {
-            // For PUT, if no location provided, remove existing location from database
             if (event.getLocation() != null) {
-                Location locationToDelete = event.getLocation();
                 event.setLocation(null);
-                locationRepository.delete(locationToDelete);
             }
         }
     }

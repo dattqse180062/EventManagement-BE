@@ -1,45 +1,35 @@
 package swd392.eventmanagement.model.entity;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Entity
-@Table(name = "departments")
+@Table(name = "event_categories")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Department {
+public class EventCategory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 100)
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id", nullable = false)
+    private Event event;
 
-    @Column(name = "code", nullable = false, unique = true, length = 25)
-    private String code;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
-    @Column(name = "description", length = 100)
-    private String description;
-
-    @Column(name = "avatar_url")
-    private String avatarUrl;
-
-    @Column(name = "banner_url")
-    private String bannerUrl;
-
-    @Column(name = "is_active")
-    private Boolean isActive = true;
-
-    @OneToMany(mappedBy = "department")
-    private Set<UserDepartmentRole> userDepartmentRoles;
+    @Column(name = "priority")
+    private Integer priority = 0;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -57,6 +47,4 @@ public class Department {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-
 }

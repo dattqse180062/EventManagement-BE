@@ -6,7 +6,7 @@ import swd392.eventmanagement.model.dto.request.TagRequest;
 import swd392.eventmanagement.model.dto.response.TagShowDTO;
 
 public interface TagService {
-    void createTag(TagRequest request);
+    TagShowDTO createTag(TagRequest tag);
 
     void updateTag(Long id, TagRequest request);
 

@@ -17,6 +17,8 @@ import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 public interface EventService {
     List<EventListDTO> getAvailableEvents();
 
+    List<EventListDTO> getEventsByCategory(String categoryCode);
+
     List<EventListDTO> getUserRegisteredEvents();
 
     List<EventListManagementDTO> getEventsForManagement(String departmentCode);
@@ -41,4 +43,6 @@ public interface EventService {
     EventDetailsManagementDTO updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest, String departmentCode);
 
     EventUpdateStatusResponse updateEventStatus(Long eventId, EventStatus newStatus, String departmentCode);
+
+    void deleteEvent(Long eventId, String departmentCode);
 }

@@ -43,6 +43,9 @@ public class User {
     @OneToMany(mappedBy = "user")
     private Set<UserDepartmentRole> userDepartmentRoles;
 
+    @OneToMany(mappedBy = "staff")
+    private Set<EventStaff> eventStaffs = new HashSet<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

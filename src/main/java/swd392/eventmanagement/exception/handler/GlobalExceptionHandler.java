@@ -287,6 +287,51 @@ public class GlobalExceptionHandler {
                                 request.getDescription(false));
                 return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
+
+        @ExceptionHandler(CategoryNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(StaffRoleNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleStaffRoleNotFoundException(StaffRoleNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(StaffRoleProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleStaffRoleProcessingException(StaffRoleProcessingException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @ExceptionHandler(EventStaffNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleEventStaffNotFoundException(EventStaffNotFoundException ex,
+                        WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                LocalDateTime.now(),
+                                ex.getMessage(),
+                                request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
         @ExceptionHandler(DashboardProcessingException.class)
         public ResponseEntity<ErrorResponse> handleDashboardProcessingException(DashboardProcessingException ex, WebRequest request) {
                 ErrorResponse errorResponse = new ErrorResponse(

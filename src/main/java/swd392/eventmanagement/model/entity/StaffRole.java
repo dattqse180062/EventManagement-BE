@@ -9,23 +9,24 @@ import lombok.Setter;
 import java.util.HashSet;
 import java.util.Set;
 
+@Entity
+@Table(name = "staff_roles")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "roles")
-public class Role {
+public class StaffRole {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 50, nullable = false, unique = true)
-    private String name;
+    @Column(name = "staff_role_name", length = 100, nullable = false, unique = true)
+    private String staffRoleName;
 
-    @ManyToMany(mappedBy = "roles")
-    private Set<User> users = new HashSet<>();
+    @Column(name = "description")
+    private String description;
 
-    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL)
-    private Set<EventCapacity> eventCapacities = new HashSet<>();
+    @OneToMany(mappedBy = "staffRole")
+    private Set<EventStaff> eventStaffs = new HashSet<>();
 }

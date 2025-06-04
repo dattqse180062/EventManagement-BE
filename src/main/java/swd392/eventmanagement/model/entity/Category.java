@@ -1,51 +1,46 @@
 package swd392.eventmanagement.model.entity;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "departments")
+@Table(name = "categories")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Department {
+public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 100)
-    private String name;
-
-    @Column(name = "code", nullable = false, unique = true, length = 25)
+    @Column(name = "code", length = 50, nullable = false, unique = true)
     private String code;
 
-    @Column(name = "description", length = 100)
+    @Column(name = "name", length = 100, nullable = false)
+    private String name;
+
+    @Column(name = "description")
     private String description;
-
-    @Column(name = "avatar_url")
-    private String avatarUrl;
-
-    @Column(name = "banner_url")
-    private String bannerUrl;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    @OneToMany(mappedBy = "department")
-    private Set<UserDepartmentRole> userDepartmentRoles;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<EventCategory> eventCategories = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {
@@ -57,6 +52,4 @@ public class Department {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-
 }
