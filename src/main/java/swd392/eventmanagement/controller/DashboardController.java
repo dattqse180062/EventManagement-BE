@@ -27,7 +27,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/stats")
-
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Operation(
             summary = "Get dashboard overview statistics",
             description = "Returns overview statistics such as total events, users, etc.",
