@@ -15,4 +15,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findByType(QuestionType type);
 
     List<Question> findBySurveyAndIsRequiredTrue(Survey survey);
+
+    List<Question> findBySurveyId(Long surveyId);
 }

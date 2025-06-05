@@ -343,6 +343,28 @@ public class GlobalExceptionHandler {
         }
 
 
+        @ExceptionHandler(SurveyNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleSurveyNotFoundException(SurveyNotFoundException ex,
+                                                                               WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                        HttpStatus.NOT_FOUND.value(),
+                        LocalDateTime.now(),
+                        ex.getMessage(),
+                        request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(SurveyProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleSurveyProcessingException(SurveyProcessingException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        LocalDateTime.now(),
+                        ex.getMessage(),
+                        request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+
         // Error response class
         @Data
         public static class ErrorResponse {

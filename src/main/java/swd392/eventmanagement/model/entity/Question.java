@@ -8,6 +8,9 @@ import swd392.eventmanagement.enums.QuestionType;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "questions")
 @Getter
@@ -36,4 +39,7 @@ public class Question {
 
     @Column(name = "is_required")
     private Boolean isRequired = false;
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Option> options = new ArrayList<>();
 }
