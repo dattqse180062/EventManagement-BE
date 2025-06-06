@@ -58,6 +58,12 @@ public class Event {
     @Column(name = "registration_end", nullable = false)
     private LocalDateTime registrationEnd;
 
+    @Column(name = "checkin_start")
+    private LocalDateTime checkinStart;
+
+    @Column(name = "checkin_end")
+    private LocalDateTime checkinEnd;
+
     @Column(name = "poster_url")
     private String posterUrl;
 

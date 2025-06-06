@@ -2,9 +2,12 @@ package swd392.eventmanagement.model.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
+import swd392.eventmanagement.model.dto.response.CheckinResponse;
 import swd392.eventmanagement.model.dto.response.RegistrationCancelResponse;
 import swd392.eventmanagement.model.dto.response.RegistrationCreateResponse;
+import swd392.eventmanagement.model.dto.response.RegistrationSearchResponse;
 import swd392.eventmanagement.model.entity.Registration;
 
 @Mapper(componentModel = "spring")
@@ -22,4 +25,26 @@ public interface RegistrationMapper {
     @Mapping(target = "eventName", source = "event.name")
     @Mapping(target = "cancelledAt", source = "canceledAt")
     RegistrationCancelResponse toRegistrationCancelResponse(Registration registration);
+
+    @Mapping(target = "email", source = "user.email")
+    @Mapping(target = "name", source = "user.fullName")
+    @Mapping(target = "eventId", source = "event.id", qualifiedByName = "stringifyEventId")
+    @Mapping(target = "eventName", source = "event.name")
+    @Mapping(target = "registrationStatus", source = "status")
+    @Mapping(target = "registeredAt", source = "createdAt")
+    @Mapping(target = "checkTime", source = "checkinAt")
+    RegistrationSearchResponse toRegistrationSearchResponse(Registration registration);
+
+    @Named("stringifyEventId")
+    default String stringifyEventId(Long id) {
+        return id != null ? id.toString() : null;
+    }
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "eventName", source = "event.name")
+    @Mapping(target = "email", source = "user.email")
+    @Mapping(target = "registrationStatus", source = "status")
+    @Mapping(target = "message", constant = "Check-in successful")
+    @Mapping(target = "checkinTime", source = "checkinAt")
+    CheckinResponse toCheckinResponse(Registration registration);
 }

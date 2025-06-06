@@ -16,7 +16,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EventListDTO {
+public class EventListAvailableResponse {
     private Long id;
     private String name;
 
@@ -38,5 +38,6 @@ public class EventListDTO {
 
     private EventMode mode;
 
+    @Builder.Default
     private Set<TagShowDTO> tags = new HashSet<>();
 }

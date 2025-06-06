@@ -40,6 +40,9 @@ public class Registration {
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 
+    @Column(name = "checkin_at")
+    private LocalDateTime checkinAt;
+
     @Column(name = "attended")
     private Boolean attended = false;
 

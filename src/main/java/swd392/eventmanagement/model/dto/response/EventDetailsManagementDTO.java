@@ -41,6 +41,8 @@ public class EventDetailsManagementDTO {
     private LocalDateTime endTime;
     private LocalDateTime registrationStart;
     private LocalDateTime registrationEnd;
+    private LocalDateTime checkinStart;
+    private LocalDateTime checkinEnd;
 
     // Media content
     private String posterUrl;

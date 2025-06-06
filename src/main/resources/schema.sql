@@ -197,6 +197,8 @@ CREATE TABLE events (
     survey_id BIGINT,
     mode event_mode NOT NULL,
     platform_id BIGINT,
+    checkin_start TIMESTAMP,
+    checkin_end TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status event_status NOT NULL DEFAULT 'DRAFT',
@@ -210,6 +212,10 @@ CREATE TABLE events (
         start_time < end_time 
         AND registration_start < registration_end
         AND registration_end <= start_time
+    ),
+    CONSTRAINT check_event_checkin_dates CHECK (
+        (checkin_start IS NULL OR checkin_end IS NULL OR checkin_start <= checkin_end)
+        AND (checkin_start IS NULL OR checkin_end IS NULL OR checkin_end < end_time)
     ),
     UNIQUE(location_id),
     UNIQUE(platform_id)
@@ -272,6 +278,7 @@ CREATE TABLE registrations (
     status registration_status NOT NULL,
     canceled_at TIMESTAMP,
     attended BOOLEAN DEFAULT FALSE,
+    checkin_at TIMESTAMP,
     survey_done BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -431,28 +438,44 @@ INSERT INTO platforms (name, url) VALUES
 ('Google Meet', 'https://meet.google.com');
 
 -- Events
-INSERT INTO events (name, department_id, type_id, audience, location_id, start_time, end_time, max_capacity, registration_start, registration_end, poster_url, banner_url, description, survey_id, mode, platform_id, created_at, updated_at, status) VALUES
-('Hội thảo Công nghệ', 1, 1, 'BOTH', 1, 
+INSERT INTO events (
+    name, department_id, type_id, audience, location_id,
+    start_time, end_time, max_capacity, registration_start, registration_end,
+    poster_url, banner_url, description, survey_id, mode, platform_id,
+    checkin_start, checkin_end,
+    created_at, updated_at, status
+) VALUES
+(
+    'Hội thảo Công nghệ', 1, 1, 'BOTH', 1,
     NOW() + INTERVAL '30 days' + INTERVAL '9 hours',
     NOW() + INTERVAL '30 days' + INTERVAL '12 hours',
-    100, 
+    100,
     NOW() + INTERVAL '15 days',
     NOW() + INTERVAL '29 days',
-    'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Hội thảo về công nghệ mới', NULL, 'HYBRID', NULL, NOW(), NOW(), 'PUBLISHED'),
-('Workshop Kỹ năng', 2, 2, 'BOTH', 2, 
+    'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Hội thảo về công nghệ mới', NULL, 'HYBRID', NULL,
+    NOW() + INTERVAL '30 days' + INTERVAL '8 hours 45 minutes',
+    NOW() + INTERVAL '30 days' + INTERVAL '9 hours 15 minutes',
+    NOW(), NOW(), 'PUBLISHED'
+),
+(
+    'Workshop Kỹ năng', 2, 2, 'BOTH', 2,
     NOW() + INTERVAL '60 days' + INTERVAL '14 hours',
     NOW() + INTERVAL '60 days' + INTERVAL '17 hours',
-    50, 
+    50,
     NOW() + INTERVAL '45 days',
     NOW() + INTERVAL '59 days',
-    'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Workshop kỹ năng mềm', NULL, 'HYBRID', 1, NOW(), NOW(), 'PUBLISHED');
+    'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Workshop kỹ năng mềm', NULL, 'HYBRID', 1,
+    NOW() + INTERVAL '60 days' + INTERVAL '13 hours 30 minutes',
+    NOW() + INTERVAL '60 days' + INTERVAL '14 hours 15 minutes',
+    NOW(), NOW(), 'PUBLISHED'
+);
 
 -- EventCapacity
 INSERT INTO event_capacity (event_id, role_id, capacity) VALUES
-(1, 2, 20),
-(1, 3, 80),
-(2, 2, 20),
-(2, 3, 30);
+(1, 1, 20),
+(1, 2, 80),
+(2, 1, 20),
+(2, 2, 30);
 
 -- Images
 INSERT INTO images (event_id, url) VALUES
@@ -473,9 +496,12 @@ INSERT INTO event_tags (event_id, tag_id) VALUES
 (2, 1);  -- Workshop Kỹ năng - Technology
 
 -- Registrations
-INSERT INTO registrations (user_id, event_id, checkin_url, status, canceled_at, attended, survey_done, created_at, updated_at) VALUES
-(1, 1, 'checkin1', 'REGISTERED', NULL, TRUE, TRUE, NOW(), NOW()),  -- LECTURER registered for Hội thảo Công nghệ
-(2, 2, 'checkin2', 'REGISTERED', NULL, TRUE, TRUE, NOW(), NOW());  -- ADMIN registered for Workshop Kỹ năng
+INSERT INTO registrations (
+    user_id, event_id, checkin_url, status, canceled_at,
+    attended, survey_done, checkin_at, created_at, updated_at
+) VALUES
+(1, 1, 'checkin1', 'ATTENDED', NULL, TRUE, TRUE, NOW(), NOW(), NOW()),  -- LECTURER registered for Hội thảo Công nghệ
+(2, 2, 'checkin2', 'ATTENDED', NULL, TRUE, TRUE, NOW(), NOW(), NOW());  -- ADMIN registered for Workshop Kỹ năng
 
 -- Surveys
 INSERT INTO surveys (title, description, start_time, end_time, status, created_at, updated_at) VALUES

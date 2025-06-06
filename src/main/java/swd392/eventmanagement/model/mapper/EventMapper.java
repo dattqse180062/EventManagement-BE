@@ -10,7 +10,7 @@ import org.mapstruct.factory.Mappers;
 import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
-import swd392.eventmanagement.model.dto.response.EventListDTO;
+import swd392.eventmanagement.model.dto.response.EventListAvailableResponse;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 import swd392.eventmanagement.model.entity.Department;
@@ -28,15 +28,15 @@ public interface EventMapper {
     @Mapping(target = "locationAddress", source = "location", qualifiedByName = "locationToAddress")
     @Mapping(target = "locationAddress2", source = "location", qualifiedByName = "locationToAddress2")
     @Mapping(target = "tags", source = "tags")
-    EventListDTO toDTO(Event event);
+    EventListAvailableResponse toDTO(Event event);
+
+    List<EventListAvailableResponse> toDTOList(List<Event> events);
 
     @Mapping(target = "typeName", source = "type", qualifiedByName = "eventTypeToName")
     @Mapping(target = "locationAddress", source = "location", qualifiedByName = "locationToAddress")
     EventListManagementDTO toEventListManagementDTO(Event event);
 
     List<EventListManagementDTO> toEventListManagementDTOList(List<Event> events);
-
-    List<EventListDTO> toDTOList(List<Event> events);
 
     @Mapping(target = "departmentName", source = "department", qualifiedByName = "departmentToName")
     @Mapping(target = "departmentAvatarUrl", source = "department.avatarUrl")
@@ -51,8 +51,9 @@ public interface EventMapper {
     @Mapping(target = "registeredCountStudent", ignore = true)
     @Mapping(target = "maxCapacityLecturer", ignore = true)
     @Mapping(target = "registeredCountLecturer", ignore = true)
-    @Mapping(target = "isRegistered", ignore = true)
     @Mapping(target = "registrationStatus", ignore = true)
+    @Mapping(target = "checkinStart", source = "checkinStart")
+    @Mapping(target = "checkinEnd", source = "checkinEnd")
     EventDetailsDTO toEventDetailsDTO(Event event);
 
     @Mapping(target = "eventId", source = "event.id")
@@ -107,5 +108,7 @@ public interface EventMapper {
     @Mapping(target = "surveyId", source = "survey.id")
     @Mapping(target = "maxCapacityStudent", ignore = true)
     @Mapping(target = "maxCapacityLecturer", ignore = true)
+    @Mapping(target = "checkinStart", source = "checkinStart")
+    @Mapping(target = "checkinEnd", source = "checkinEnd")
     EventDetailsManagementDTO toEventDetailsManagement(Event event);
 }
