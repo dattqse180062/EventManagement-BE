@@ -1,6 +1,7 @@
 package swd392.eventmanagement.service.event.impl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.jpa.domain.Specification;
@@ -41,8 +42,9 @@ import swd392.eventmanagement.model.dto.request.EventCreateRequest;
 import swd392.eventmanagement.model.dto.request.EventUpdateRequest;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
-import swd392.eventmanagement.model.dto.response.EventListDTO;
+import swd392.eventmanagement.model.dto.response.EventListAvailableResponse;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.model.dto.response.EventListRegisteredResponse;
 import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.entity.Event;
@@ -98,7 +100,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventListDTO> getAvailableEvents() {
+    public List<EventListAvailableResponse> getAvailableEvents() {
         try {
             List<Event> events = eventRepository.findByStatusIn(Set.of(
                     EventStatus.PUBLISHED,
@@ -131,7 +133,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventListDTO> getEventsByCategory(String categoryCode) {
+    public List<EventListAvailableResponse> getEventsByCategory(String categoryCode) {
         logger.info("Getting events for category code: {}", categoryCode);
         try {
             // Get category by code to verify it exists
@@ -160,7 +162,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventListDTO> getUserRegisteredEvents() {
+    public List<EventListRegisteredResponse> getUserRegisteredEvents() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
             throw new UserNotFoundException("User not authenticated");
@@ -176,9 +178,20 @@ public class EventServiceImpl implements EventService {
                 throw new EventNotFoundException("No registered events found for the user");
             }
 
-            logger.info("Found {} registered events for user {}", events.size(), userId);
-            return eventMapper.toDTOList(events);
+            List<EventListRegisteredResponse> responses = new ArrayList<>();
+            for (Event event : events) {
+                EventListAvailableResponse eventInfo = eventMapper.toDTO(event);
+                registrationRepository.findByUserIdAndEventId(userId, event.getId())
+                        .ifPresent(registration -> {
+                            responses.add(EventListRegisteredResponse.builder()
+                                    .eventInfo(eventInfo)
+                                    .registrationStatus(registration.getStatus())
+                                    .build());
+                        });
+            }
 
+            logger.info("Found {} registered events for user {}", events.size(), userId);
+            return responses;
         } catch (Exception e) {
             logger.error("Error retrieving registered events for user {}", userId, e);
             throw new EventProcessingException("Failed to retrieve registered events", e);
@@ -206,7 +219,9 @@ public class EventServiceImpl implements EventService {
             Long userId = null;
             if (auth != null && auth.isAuthenticated() && !("anonymousUser".equals(auth.getPrincipal()))) {
                 userId = ((UserDetailsImpl) auth.getPrincipal()).getId();
-            } // Use MapStruct to map the base entity properties
+            }
+
+            // Use MapStruct to map the base entity properties
             EventDetailsDTO eventDetailsDTO = eventMapper.toEventDetailsDTO(event);
 
             // Student and Lecturer capacities and counts
@@ -234,18 +249,12 @@ public class EventServiceImpl implements EventService {
             // Check if current user is registered for this event
             if (userId != null) {
                 registrationRepository.findByUserIdAndEventId(userId, eventId).ifPresentOrElse(
-                        registration -> {
-                            eventDetailsDTO.setIsRegistered(true);
-                            eventDetailsDTO.setRegistrationStatus(registration.getStatus().toString());
-                        },
-                        () -> {
-                            eventDetailsDTO.setIsRegistered(false);
-                            eventDetailsDTO.setRegistrationStatus(null);
-                        });
+                        registration -> eventDetailsDTO.setRegistrationStatus(registration.getStatus()),
+                        () -> eventDetailsDTO.setRegistrationStatus(null));
             } else {
-                eventDetailsDTO.setIsRegistered(false);
                 eventDetailsDTO.setRegistrationStatus(null);
             }
+
             logger.info("Successfully retrieved event details for event ID: {}", eventId);
             return eventDetailsDTO;
 
@@ -259,7 +268,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventListDTO> searchEvents(
+    public List<EventListAvailableResponse> searchEvents(
             String name,
             List<Long> tagIds,
             Long typeId,
@@ -366,7 +375,8 @@ public class EventServiceImpl implements EventService {
     public EventDetailsManagementDTO createNewEvent(EventCreateRequest eventCreateRequest, String departmentCode) {
         logger.info("Creating new event with name: {}", eventCreateRequest.getName());
 
-        try { // Input validation
+        try {
+            // Input validation
             createValidator.validateEventCreateRequest(eventCreateRequest);
 
             // Validate user has permission to create events in this department

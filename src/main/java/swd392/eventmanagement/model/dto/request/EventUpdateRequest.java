@@ -62,6 +62,15 @@ public class EventUpdateRequest {
     @NotNull(message = "End time cannot be null")
     private LocalDateTime endTime;
 
+    @NotNull(message = "Registration start time cannot be null")
     private LocalDateTime registrationStart;
+
+    @NotNull(message = "Registration end time cannot be null")
     private LocalDateTime registrationEnd;
+
+    @NotNull(message = "Check-in start time cannot be null")
+    private LocalDateTime checkinStart;
+
+    @NotNull(message = "Check-in end time cannot be null")
+    private LocalDateTime checkinEnd;
 }

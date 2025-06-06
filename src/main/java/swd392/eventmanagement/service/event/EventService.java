@@ -10,16 +10,17 @@ import swd392.eventmanagement.model.dto.request.EventCreateRequest;
 import swd392.eventmanagement.model.dto.request.EventUpdateRequest;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
-import swd392.eventmanagement.model.dto.response.EventListDTO;
+import swd392.eventmanagement.model.dto.response.EventListAvailableResponse;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
+import swd392.eventmanagement.model.dto.response.EventListRegisteredResponse;
 import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 
 public interface EventService {
-    List<EventListDTO> getAvailableEvents();
+    List<EventListAvailableResponse> getAvailableEvents();
 
-    List<EventListDTO> getEventsByCategory(String categoryCode);
+    List<EventListAvailableResponse> getEventsByCategory(String categoryCode);
 
-    List<EventListDTO> getUserRegisteredEvents();
+    List<EventListRegisteredResponse> getUserRegisteredEvents();
 
     List<EventListManagementDTO> getEventsForManagement(String departmentCode);
 
@@ -27,7 +28,7 @@ public interface EventService {
 
     EventDetailsManagementDTO getEventDetailsForManagement(String departmentCode, Long eventId);
 
-    List<EventListDTO> searchEvents(
+    List<EventListAvailableResponse> searchEvents(
             String name,
             List<Long> tagIds,
             Long typeId,
