@@ -169,4 +169,13 @@ public class EventController {
         eventService.deleteEvent(eventId, departmentCode);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/staff")
+    @Operation(summary = "Get events for staff", description = "Returns a list of events where the authenticated user is a staff member", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Staff events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListAvailableResponse.class)))
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - No events found where user is a staff member")
+    public ResponseEntity<?> getEventsForStaff() {
+        return ResponseEntity.ok(eventService.getEventsForStaff());
+    }
 }

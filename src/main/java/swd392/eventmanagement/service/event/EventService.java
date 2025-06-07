@@ -13,6 +13,7 @@ import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListAvailableResponse;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListRegisteredResponse;
+import swd392.eventmanagement.model.dto.response.EventListStaffResponse;
 import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 
 public interface EventService {
@@ -27,6 +28,8 @@ public interface EventService {
     EventDetailsDTO getEventDetails(Long eventId);
 
     EventDetailsManagementDTO getEventDetailsForManagement(String departmentCode, Long eventId);
+
+    List<EventListStaffResponse> getEventsForStaff();
 
     List<EventListAvailableResponse> searchEvents(
             String name,

@@ -21,6 +21,9 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
         @Query("SELECT e FROM Event e JOIN Registration r ON e.id = r.event.id WHERE r.user.id = :userId")
         List<Event> findEventsByUserId(@Param("userId") Long userId);
 
+        @Query("SELECT DISTINCT e FROM Event e JOIN e.eventStaffs es WHERE es.staff.id = :staffId")
+        List<Event> findEventsByStaffId(@Param("staffId") Long staffId);
+
         Optional<Event> findById(Long id);
 
         List<Event> findByDepartment(Department department);

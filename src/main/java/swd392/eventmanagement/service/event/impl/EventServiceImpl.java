@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,6 +46,7 @@ import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListAvailableResponse;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventListRegisteredResponse;
+import swd392.eventmanagement.model.dto.response.EventListStaffResponse;
 import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.entity.Event;
@@ -264,6 +266,51 @@ public class EventServiceImpl implements EventService {
         } catch (Exception e) {
             logger.error("Error retrieving details for event with ID: {}", eventId, e);
             throw new EventProcessingException("Failed to retrieve event details", e);
+        }
+    }
+
+    @Override
+    public List<EventListStaffResponse> getEventsForStaff() {
+        // Get current authenticated user
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new UserNotFoundException("User not authenticated");
+        }
+
+        Long userId = ((UserDetailsImpl) auth.getPrincipal()).getId();
+
+        try {
+            // Get all events where user is a staff member
+            List<Event> events = eventRepository.findEventsByStaffId(userId);
+
+            if (events.isEmpty()) {
+                logger.info("No events found where user {} is a staff member", userId);
+                throw new EventNotFoundException("No events found where user is a staff member");
+            } // Convert events to response DTOs with staff roles using EventMapper
+            List<EventListStaffResponse> responses = new ArrayList<>();
+            for (Event event : events) {
+                EventListStaffResponse response = new EventListStaffResponse();
+                // Map basic event info using the mapper
+                response.setEventInfo(eventMapper.toDTO(event));
+
+                // Extract staff roles using mapping from EventStaff entities
+                Set<String> staffRoles = event.getEventStaffs().stream()
+                        .filter(es -> es.getStaff().getId().equals(userId))
+                        .map(es -> es.getStaffRole().getStaffRoleName())
+                        .collect(Collectors.toSet());
+
+                response.setStaffRoles(staffRoles);
+                responses.add(response);
+            }
+
+            logger.info("Found {} events where user {} is a staff member", events.size(), userId);
+            return responses;
+        } catch (EventNotFoundException e) {
+            // Just rethrow without additional logging
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving events for staff member {}", userId, e);
+            throw new EventProcessingException("Failed to retrieve staff events", e);
         }
     }
 
