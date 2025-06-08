@@ -2,23 +2,20 @@ package swd392.eventmanagement.controller;
 
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import swd392.eventmanagement.model.dto.request.QuestionCreateRequest;
-import swd392.eventmanagement.model.dto.response.QuestionResponse;
-import swd392.eventmanagement.service.impl.SurveyServiceImpl;
-
-import java.util.List;
+import swd392.eventmanagement.model.dto.request.SurveyCreateRequest;
+import swd392.eventmanagement.model.dto.response.SurveyResponse;
+import swd392.eventmanagement.service.survey.impl.SurveyServiceImpl;
 
 @RestController
 @RequestMapping("/api/v1/surveys")
@@ -28,23 +25,26 @@ public class SurveyController {
 
     private final SurveyServiceImpl surveyService;
 
-    @PostMapping("/{surveyId}/questions")
+
 
     @Operation(
-            summary = "Create questions for a survey",
-            description = "Create multiple questions for a given survey ID",
+            summary = "Create a new survey with questions",
+            description = "Create a survey along with multiple questions in a single request",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @ApiResponse(responseCode = "201", description = "Questions created successfully",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = QuestionResponse.class))))
-    @ApiResponse(responseCode = "400", description = "Bad Request - Invalid question data supplied")
-    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
-    @ApiResponse(responseCode = "404", description = "Survey not found with given ID")
-    public ResponseEntity<List<QuestionResponse>> createQuestionsForSurvey(
-            @PathVariable Long surveyId,
-            @Valid @RequestBody List<QuestionCreateRequest> requestList
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Survey created successfully",
+                    content = @Content(schema = @Schema(implementation = SurveyResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request - Invalid input data"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @PostMapping("")
+    public ResponseEntity<SurveyResponse> createSurveyWithQuestions(
+            @RequestParam("departmentCode") String departmentCode,
+            @Valid @RequestBody SurveyCreateRequest request
     ) {
-        List<QuestionResponse> createdQuestions = surveyService.createQuestionForSurvey(surveyId, requestList);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdQuestions);
+        SurveyResponse response = surveyService.createSurveyWithQuestions(request, departmentCode);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
