@@ -13,4 +13,5 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
     List<Survey> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
 
     List<Survey> findByEndTimeBefore(LocalDateTime dateTime);
+    boolean existsByTitleAndStartTimeAndEndTime(String title, LocalDateTime startTime, LocalDateTime endTime);
 }
