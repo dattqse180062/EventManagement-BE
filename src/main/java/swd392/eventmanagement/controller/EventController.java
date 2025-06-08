@@ -27,7 +27,7 @@ import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.enums.TargetAudience;
 import swd392.eventmanagement.model.dto.response.EventDetailsDTO;
 import swd392.eventmanagement.model.dto.response.EventDetailsManagementDTO;
-import swd392.eventmanagement.model.dto.response.EventListDTO;
+import swd392.eventmanagement.model.dto.response.EventListAvailableResponse;
 import swd392.eventmanagement.model.dto.response.EventListManagementDTO;
 import swd392.eventmanagement.model.dto.response.EventUpdateStatusResponse;
 import swd392.eventmanagement.service.event.EventService;
@@ -46,7 +46,7 @@ public class EventController {
 
     @GetMapping("")
     @Operation(summary = "Get available events", description = "Returns a list of all available events", security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponse(responseCode = "200", description = "Available events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListDTO.class)))
+    @ApiResponse(responseCode = "200", description = "Available events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListAvailableResponse.class)))
     @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
     @ApiResponse(responseCode = "404", description = "Not Found - No published events are currently available")
     public ResponseEntity<?> getAvailableEvents() {
@@ -55,7 +55,7 @@ public class EventController {
 
     @GetMapping("/registered")
     @Operation(summary = "Get user's registered events", description = "Returns a list of events that the current authenticated user has registered for", security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponse(responseCode = "200", description = "User's registered events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListDTO.class)))
+    @ApiResponse(responseCode = "200", description = "User's registered events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListAvailableResponse.class)))
     @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
     @ApiResponse(responseCode = "404", description = "Not Found - No registered events found for the user")
     public ResponseEntity<?> getUserRegisteredEvents() {
@@ -73,7 +73,7 @@ public class EventController {
 
     @GetMapping("/search")
     @Operation(summary = "Search and filter events", description = "Search events by name and filter by tag, type, status, time, mode, department", security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponse(responseCode = "200", description = "Events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListDTO.class)))
+    @ApiResponse(responseCode = "200", description = "Events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListAvailableResponse.class)))
     @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
     @ApiResponse(responseCode = "404", description = "Not Found - No events found matching the search criteria")
     public ResponseEntity<?> searchEvents(
@@ -150,7 +150,7 @@ public class EventController {
 
     @GetMapping("/category/{categoryCode}")
     @Operation(summary = "Get events by category", description = "Returns a list of events belonging to a specific category", security = @SecurityRequirement(name = "bearerAuth"))
-    @ApiResponse(responseCode = "200", description = "Events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListDTO.class)))
+    @ApiResponse(responseCode = "200", description = "Events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListAvailableResponse.class)))
     @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
     @ApiResponse(responseCode = "404", description = "Not Found - Category not found or no events in this category")
     public ResponseEntity<?> getEventsByCategory(@PathVariable String categoryCode) {
@@ -168,5 +168,14 @@ public class EventController {
             @PathVariable Long eventId) {
         eventService.deleteEvent(eventId, departmentCode);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/staff")
+    @Operation(summary = "Get events for staff", description = "Returns a list of events where the authenticated user is a staff member", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Staff events retrieved successfully", content = @Content(schema = @Schema(implementation = EventListAvailableResponse.class)))
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    @ApiResponse(responseCode = "404", description = "Not Found - No events found where user is a staff member")
+    public ResponseEntity<?> getEventsForStaff() {
+        return ResponseEntity.ok(eventService.getEventsForStaff());
     }
 }

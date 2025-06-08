@@ -85,6 +85,8 @@ public class EventBuilder {
         event.setEndTime(request.getEndTime());
         event.setRegistrationStart(request.getRegistrationStart());
         event.setRegistrationEnd(request.getRegistrationEnd());
+        event.setCheckinStart(request.getCheckinStart());
+        event.setCheckinEnd(request.getCheckinEnd());
         event.setStatus(EventStatus.DRAFT);
         event.setCreatedAt(LocalDateTime.now());
         event.setUpdatedAt(LocalDateTime.now());
@@ -139,6 +141,8 @@ public class EventBuilder {
         event.setEndTime(request.getEndTime());
         event.setRegistrationStart(request.getRegistrationStart());
         event.setRegistrationEnd(request.getRegistrationEnd());
+        event.setCheckinStart(request.getCheckinStart());
+        event.setCheckinEnd(request.getCheckinEnd());
 
         // Always update the updatedAt timestamp
         event.setUpdatedAt(LocalDateTime.now());

@@ -14,6 +14,8 @@ import java.util.Set;
 public interface TagMapper {
     TagMapper INSTANCE = Mappers.getMapper(TagMapper.class);
 
+    @Mapping(target = "createdAt", source = "createdAt")
+    @Mapping(target = "updatedAt", source = "updatedAt")
     TagShowDTO toDTO(Tag tag);
 
     List<TagShowDTO> toListDTOs(List<Tag> tags);

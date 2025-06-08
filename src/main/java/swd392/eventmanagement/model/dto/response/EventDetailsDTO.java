@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import swd392.eventmanagement.enums.EventMode;
 import swd392.eventmanagement.enums.EventStatus;
+import swd392.eventmanagement.enums.RegistrationStatus;
 import swd392.eventmanagement.enums.TargetAudience;
 
 import java.time.LocalDateTime;
@@ -51,6 +52,8 @@ public class EventDetailsDTO {
     private LocalDateTime endTime;
     private LocalDateTime registrationStart;
     private LocalDateTime registrationEnd;
+    private LocalDateTime checkinStart;
+    private LocalDateTime checkinEnd;
 
     // Media content
     private String posterUrl;
@@ -69,6 +72,5 @@ public class EventDetailsDTO {
     private LocalDateTime updatedAt;
 
     // Additional data for the current user
-    private Boolean isRegistered; // Whether the current user is registered for this event
-    private String registrationStatus; // Status of the user's registration if registered
+    private RegistrationStatus registrationStatus; // Status of the user's registration if registered
 }
