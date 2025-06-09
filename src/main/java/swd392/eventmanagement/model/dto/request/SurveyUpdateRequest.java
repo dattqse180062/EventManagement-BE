@@ -8,13 +8,12 @@ import java.util.List;
 
 @Data
 
-public class SurveyCreateRequest {
+public class SurveyUpdateRequest {
 
-    @NotNull(message = "eventId is required")
-    private Long eventId;
+
     private String title;
     private String description;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private List<QuestionCreateRequest> questions;
+    private List<QuestionRequest> questions;
 }

@@ -8,12 +8,12 @@ import swd392.eventmanagement.enums.QuestionType;
 import java.util.List;
 
 @Data
-public class QuestionCreateRequest {
-
+public class QuestionRequest {
+    private Long id;
     private String question;
     private Integer orderNum;
     private QuestionType type;
     private Boolean isRequired;
-    private List<OptionCreateRequest> options;
+    private List<OptionRequest> options;
 
 }
