@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.SurveyCreateRequest;
+import swd392.eventmanagement.model.dto.request.SurveyUpdateRequest;
 import swd392.eventmanagement.model.dto.response.SurveyResponse;
 import swd392.eventmanagement.service.survey.impl.SurveyServiceImpl;
 
@@ -47,4 +48,31 @@ public class SurveyController {
         SurveyResponse response = surveyService.createSurveyWithQuestions(request, departmentCode);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @Operation(
+            summary = "Update an existing survey with questions",
+            description = "Update a survey and its questions, including adding, modifying, or deleting questions and options",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Survey updated successfully",
+                    content = @Content(schema = @Schema(implementation = SurveyResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request - Invalid input data"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Survey not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @PutMapping("/{surveyId}")
+    public ResponseEntity<SurveyResponse> updateSurveyWithQuestions(
+            @PathVariable("surveyId") Long surveyId,
+            @RequestParam("departmentCode") String departmentCode,
+            @Valid @RequestBody SurveyUpdateRequest request
+    ) {
+        SurveyResponse response = surveyService.updateSurveyWithQuestions(surveyId, request, departmentCode);
+        return ResponseEntity.ok(response);
+    }
+
+
+
+
 }
