@@ -16,5 +16,5 @@ public class SurveyCreateRequest {
     private String description;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private List<QuestionRequest> questions;
+    private List<QuestionCreateRequest> questions;
 }

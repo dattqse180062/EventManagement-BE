@@ -9,10 +9,7 @@ import org.springframework.stereotype.Service;
 import swd392.eventmanagement.enums.SurveyStatus;
 import swd392.eventmanagement.exception.SurveyNotFoundException;
 import swd392.eventmanagement.exception.SurveyProcessingException;
-import swd392.eventmanagement.model.dto.request.OptionRequest;
-import swd392.eventmanagement.model.dto.request.QuestionRequest;
-import swd392.eventmanagement.model.dto.request.SurveyCreateRequest;
-import swd392.eventmanagement.model.dto.request.SurveyUpdateRequest;
+import swd392.eventmanagement.model.dto.request.*;
 import swd392.eventmanagement.model.dto.response.OptionResponse;
 import swd392.eventmanagement.model.dto.response.QuestionResponse;
 import swd392.eventmanagement.model.dto.response.SurveyResponse;
@@ -69,7 +66,7 @@ public class SurveyServiceImpl implements SurveyService {
 
             // Constraint 1: check for duplicate question content
             Set<String> uniqueQuestions = new HashSet<>();
-            for (QuestionRequest qReq : request.getQuestions()) {
+            for (QuestionCreateRequest qReq : request.getQuestions()) {
                 String normalized = qReq.getQuestion().trim().toLowerCase();
                 if (!uniqueQuestions.add(normalized)) {
                     throw new SurveyProcessingException("Duplicate question: " + normalized);
@@ -78,7 +75,7 @@ public class SurveyServiceImpl implements SurveyService {
 
             // Constraint 2: check for duplicate order number
             Set<Integer> uniqueOrderNums = new HashSet<>();
-            for (QuestionRequest qReq : request.getQuestions()) {
+            for (QuestionCreateRequest qReq : request.getQuestions()) {
                 if (!uniqueOrderNums.add(qReq.getOrderNum())) {
                     throw new SurveyProcessingException("Duplicate question order number: " + qReq.getOrderNum());
                 }
@@ -101,7 +98,7 @@ public class SurveyServiceImpl implements SurveyService {
             // Save questions and options
             List<QuestionResponse> questionResponses = new ArrayList<>();
 
-            for (QuestionRequest qReq : request.getQuestions()) {
+            for (QuestionCreateRequest qReq : request.getQuestions()) {
                 Question question = new Question();
                 question.setSurvey(savedSurvey);
                 question.setQuestion(qReq.getQuestion());
