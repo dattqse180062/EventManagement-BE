@@ -375,7 +375,22 @@ INSERT INTO users (email, full_name, provider_id) VALUES
   ('danhlagi01472@gmail.com', 'LECTURER', 'LECTURER-TEST-01'),
   ('tqdat410@gmail.com', 'ADMIN', 'ADMIN-TEST-01'),
   ('hoangthao2222@gmail.com', 'LECTURER', 'LECTURER-TEST-02'),
-  ('tuanhuymai168h@gmail.com', 'ADMIN', 'ADMIN-TEST-02');
+  ('tuanhuymai168h@gmail.com', 'ADMIN', 'ADMIN-TEST-02'),
+  ('test01@fpt.edu.vn', 'test01', 'STUDENT-TEST-03'),
+  ('test02@fpt.edu.vn', 'test02', 'STUDENT-TEST-04'),
+  ('test03@fpt.edu.vn', 'test03', 'STUDENT-TEST-05'),
+  ('test04@fpt.edu.vn', 'test04', 'STUDENT-TEST-06'),
+  ('test05@fpt.edu.vn', 'test05', 'STUDENT-TEST-07'),
+  ('test06@fpt.edu.vn', 'test06', 'STUDENT-TEST-08'),
+  ('test07@fpt.edu.vn', 'test07', 'STUDENT-TEST-09'),
+  ('test08@fpt.edu.vn', 'test08', 'STUDENT-TEST-10'),
+  ('test09@fpt.edu.vn', 'test09', 'STUDENT-TEST-11'),
+  ('test10@fpt.edu.vn', 'test10', 'STUDENT-TEST-12'),
+  ('test11@fpt.edu.vn', 'test11', 'STUDENT-TEST-13'),
+  ('test12@fpt.edu.vn', 'test12', 'STUDENT-TEST-14'),
+  ('test13@fpt.edu.vn', 'test13', 'STUDENT-TEST-15'),
+  ('test14@fpt.edu.vn', 'test14', 'STUDENT-TEST-16'),
+  ('test15@fpt.edu.vn', 'test15', 'STUDENT-TEST-17');
 
 -- UserRoles
 INSERT INTO user_roles (user_id, role_id)
@@ -397,6 +412,11 @@ INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
 FROM users u, roles r
 WHERE u.email = 'tuanhuymai168h@gmail.com' AND r.name = 'ROLE_ADMIN';
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u, roles r
+WHERE u.email LIKE 'test%@fpt.edu.vn' AND r.name = 'ROLE_STUDENT';
 
 -- DepartmentRoles
 INSERT INTO department_roles (name, description) VALUES
@@ -430,6 +450,7 @@ INSERT INTO event_types (name) VALUES
 -- Locations
 INSERT INTO locations (address, ward, district, city) VALUES
 ('Hội trường D1 trường đại học FPT', 'D1', 'TP.Thủ Đức', 'Hồ Chí Minh'),
+('Hội trường Nhà hát lớn Nhà văn hóa Sinh viên', 'D1', 'TP.Thủ Đức', 'Hồ Chí Minh'),
 ('Hội trường Nhà hát lớn Nhà văn hóa Sinh viên', 'D1', 'TP.Thủ Đức', 'Hồ Chí Minh');
 
 -- Platforms
@@ -445,37 +466,44 @@ INSERT INTO events (
     checkin_start, checkin_end,
     created_at, updated_at, status
 ) VALUES
-(
-    'Hội thảo Công nghệ', 1, 1, 'BOTH', 1,
+('Hội thảo Công nghệ', 1, 1, 'BOTH', 1,
     NOW() + INTERVAL '30 days' + INTERVAL '9 hours',
     NOW() + INTERVAL '30 days' + INTERVAL '12 hours',
     100,
     NOW() + INTERVAL '15 days',
     NOW() + INTERVAL '29 days',
     'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Hội thảo về công nghệ mới', NULL, 'HYBRID', NULL,
-    NOW() + INTERVAL '30 days' + INTERVAL '8 hours 45 minutes',
-    NOW() + INTERVAL '30 days' + INTERVAL '9 hours 15 minutes',
-    NOW(), NOW(), 'PUBLISHED'
-),
-(
-    'Workshop Kỹ năng', 2, 2, 'BOTH', 2,
+    NOW() + INTERVAL '30 days' + INTERVAL '8 hours 30 minutes', -- checkin_start: 30 phút trước start_time
+    NOW() + INTERVAL '30 days' + INTERVAL '10 hours',          -- checkin_end: Sau start_time 1 tiếng
+    NOW(), NOW(), 'PUBLISHED'),
+('Workshop Kỹ năng', 2, 2, 'BOTH', 2,
     NOW() + INTERVAL '60 days' + INTERVAL '14 hours',
     NOW() + INTERVAL '60 days' + INTERVAL '17 hours',
     50,
     NOW() + INTERVAL '45 days',
     NOW() + INTERVAL '59 days',
     'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Workshop kỹ năng mềm', NULL, 'HYBRID', 1,
-    NOW() + INTERVAL '60 days' + INTERVAL '13 hours 30 minutes',
-    NOW() + INTERVAL '60 days' + INTERVAL '14 hours 15 minutes',
-    NOW(), NOW(), 'PUBLISHED'
-);
+    NOW() + INTERVAL '60 days' + INTERVAL '13 hours 30 minutes', -- checkin_start: 30 phút trước start_time
+    NOW() + INTERVAL '60 days' + INTERVAL '15 hours',          -- checkin_end: Sau start_time 1 tiếng
+    NOW(), NOW(), 'PUBLISHED'),
+('Buổi Kiểm tra Check-in', 1, 3, 'STUDENT', 3,
+    NOW() + INTERVAL '3 hours',     -- start_time: ~3 tiếng kể từ bây giờ
+    NOW() + INTERVAL '60 days',     -- end_time: ~4 tiếng kể từ bây giờ (1 tiếng sau start_time)
+    20,
+    NOW() - INTERVAL '1 day',       -- Đăng ký đã mở từ hôm qua
+    NOW() + INTERVAL '2 hours 30 minutes', -- Đăng ký kết thúc 30 phút trước start_time
+    'https://placebear.com/200/300', 'https://placebear.com/200/300', 'Sự kiện để kiểm tra tính năng check-in cho sinh viên', NULL, 'OFFLINE', NULL,
+    NOW(),      -- checkin_start: ~1 tiếng kể từ bây giờ (2 tiếng trước start_time)
+    NOW() + INTERVAL '59 days',     -- checkin_end: ~5 tiếng kể từ bây giờ (2 tiếng sau start_time)
+    NOW(), NOW(), 'PUBLISHED');
 
 -- EventCapacity
 INSERT INTO event_capacity (event_id, role_id, capacity) VALUES
-(1, 1, 20),
-(1, 2, 80),
-(2, 1, 20),
-(2, 2, 30);
+(1, 2, 20),
+(1, 3, 80),
+(2, 2, 20),
+(2, 3, 30),
+(3, 2, 20);
 
 -- Images
 INSERT INTO images (event_id, url) VALUES
@@ -498,10 +526,26 @@ INSERT INTO event_tags (event_id, tag_id) VALUES
 -- Registrations
 INSERT INTO registrations (
     user_id, event_id, checkin_url, status, canceled_at,
-    attended, survey_done, checkin_at, created_at, updated_at
+    attended, survey_done, checkin_at,
+    created_at, updated_at
 ) VALUES
-(1, 1, 'checkin1', 'ATTENDED', NULL, TRUE, TRUE, NOW(), NOW(), NOW()),  -- LECTURER registered for Hội thảo Công nghệ
-(2, 2, 'checkin2', 'ATTENDED', NULL, TRUE, TRUE, NOW(), NOW(), NOW());  -- ADMIN registered for Workshop Kỹ năng
+(1, 1, 'checkin1', 'ATTENDED', NULL, TRUE, TRUE, NOW() - INTERVAL '1 hour', NOW(), NOW()),
+(2, 2, 'checkin2', 'ATTENDED', NULL, TRUE, TRUE, NOW() - INTERVAL '1 hour', NOW(), NOW()),
+(5, 3, 'checkin_test_01', 'REGISTERED', NULL, FALSE, FALSE, NULL, NOW(), NOW()),
+(6, 3, 'checkin_test_02', 'REGISTERED', NULL, FALSE, FALSE, NULL, NOW(), NOW()),
+(7, 3, 'checkin_test_03', 'REGISTERED', NULL, FALSE, FALSE, NULL, NOW(), NOW()),
+(8, 3, 'checkin_test_04', 'REGISTERED', NULL, FALSE, FALSE, NULL, NOW(), NOW()),
+(9, 3, 'checkin_test_05', 'REGISTERED', NULL, FALSE, FALSE, NULL, NOW(), NOW()),
+(10, 3, 'checkin_test_06', 'CANCELED', NOW(), FALSE, FALSE, NULL, NOW(), NOW()),
+(11, 3, 'checkin_test_07', 'CANCELED', NOW(), FALSE, FALSE, NULL, NOW(), NOW()),
+(12, 3, 'checkin_test_08', 'CANCELED', NOW(), FALSE, FALSE, NULL, NOW(), NOW()),
+(13, 3, 'checkin_test_09', 'CANCELED', NOW(), FALSE, FALSE, NULL, NOW(), NOW()),
+(14, 3, 'checkin_test_10', 'ATTENDED', NULL, TRUE, TRUE, NOW() - INTERVAL '30 minutes', NOW(), NOW()),
+(15, 3, 'checkin_test_11', 'ATTENDED', NULL, TRUE, TRUE, NOW() - INTERVAL '29 minutes', NOW(), NOW()),
+(16, 3, 'checkin_test_12', 'ATTENDED', NULL, TRUE, TRUE, NOW() - INTERVAL '28 minutes', NOW(), NOW()),
+(17, 3, 'checkin_test_13', 'ATTENDED', NULL, TRUE, TRUE, NOW() - INTERVAL '27 minutes', NOW(), NOW()),
+(18, 3, 'checkin_test_14', 'ATTENDED', NULL, TRUE, TRUE, NOW() - INTERVAL '26 minutes', NOW(), NOW()),
+(19, 3, 'checkin_test_15', 'ATTENDED', NULL, TRUE, TRUE, NOW() - INTERVAL '25 minutes', NOW(), NOW());
 
 -- Surveys
 INSERT INTO surveys (title, description, start_time, end_time, status, created_at, updated_at) VALUES

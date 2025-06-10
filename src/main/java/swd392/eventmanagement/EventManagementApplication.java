@@ -3,6 +3,7 @@ package swd392.eventmanagement;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import swd392.eventmanagement.config.properties.JwtProperties;
@@ -16,6 +17,7 @@ import swd392.eventmanagement.config.properties.DomainAuthProperties;
         DomainAuthProperties.class
 })
 @EnableScheduling
+@EnableAsync
 public class EventManagementApplication {
     public static void main(String[] args) {
         SpringApplication.run(EventManagementApplication.class, args);

@@ -1,9 +1,13 @@
 package swd392.eventmanagement.service.impl;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import swd392.eventmanagement.enums.EventMode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +28,7 @@ import swd392.eventmanagement.exception.EventRegistrationConflictException;
 import swd392.eventmanagement.exception.StaffRoleNotFoundException;
 import swd392.eventmanagement.model.dto.request.RegistrationCreateRequest;
 import swd392.eventmanagement.model.dto.response.CheckinResponse;
+import swd392.eventmanagement.service.EmailService;
 import swd392.eventmanagement.model.dto.response.RegistrationCancelResponse;
 import swd392.eventmanagement.model.dto.response.RegistrationCreateResponse;
 import swd392.eventmanagement.model.dto.response.RegistrationSearchResponse;
@@ -55,6 +60,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final EventStaffRepository eventStaffRepository;
     private final StaffRoleRepository staffRoleRepository;
     private final RegistrationMapper registrationMapper;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -81,6 +87,9 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         Registration registration = createAndSaveRegistration(user, event, request.getCheckinUrl());
         RegistrationCreateResponse response = registrationMapper.toRegistrationCreateResponse(registration);
+
+        // Send confirmation email
+        sendRegistrationConfirmationEmail(user, event, registration);
 
         logger.info("Successfully created registration ID: {} for event: {} and user: {}",
                 registration.getId(), event.getId(), user.getId());
@@ -129,6 +138,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         registration.setStatus(RegistrationStatus.CANCELED);
         registration.setCanceledAt(now); // Set cancellation timestamp
         registration = registrationRepository.save(registration);
+
+        // Send cancellation email
+        sendRegistrationCancellationEmail(user, event, registration);
 
         RegistrationCancelResponse response = registrationMapper.toRegistrationCancelResponse(registration);
 
@@ -363,5 +375,200 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (!isCheckinStaff) {
             throw new AccessDeniedException("User is not authorized to perform check-in for this event");
         }
+    }
+
+    /**
+     * Sends a registration confirmation email with QR code to the user.
+     * 
+     * @param user         The user who registered
+     * @param event        The event for which the user registered
+     * @param registration The registration record
+     */
+    private void sendRegistrationConfirmationEmail(User user, Event event, Registration registration) {
+        try {
+            logger.info("Sending registration confirmation email to: {}", user.getEmail());
+
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("title", "Event Registration Confirmation");
+            variables.put("greeting", "Hello " + user.getFullName() + ","); // Event details
+            Map<String, Object> eventDetails = new HashMap<>();
+            eventDetails.put("name", event.getName());
+            eventDetails.put("date", formatEventDateTime(event.getStartTime(), event.getEndTime()));
+
+            // Add registration time
+            eventDetails.put("registrationTime",
+                    registration.getCreatedAt() != null
+                            ? registration.getCreatedAt().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"))
+                            : LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")));
+
+            // Add check-in time window if available
+            if (event.getCheckinStart() != null && event.getCheckinEnd() != null) {
+                eventDetails.put("checkinWindow", "Check-in available from " +
+                        event.getCheckinStart().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")) +
+                        " to " +
+                        event.getCheckinEnd().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")));
+            } // Set location and platform separately instead of combining them
+            // Handle physical location if applicable (OFFLINE or HYBRID mode)
+            if (event.getMode() == EventMode.OFFLINE || event.getMode() == EventMode.HYBRID) {
+                if (event.getLocation() != null) {
+                    // Include full address details with city, ward, district
+                    StringBuilder fullAddress = new StringBuilder();
+                    fullAddress.append(event.getLocation().getAddress());
+
+                    // Add ward if available
+                    if (event.getLocation().getWard() != null && !event.getLocation().getWard().isEmpty()) {
+                        fullAddress.append(", Ward ").append(event.getLocation().getWard());
+                    }
+
+                    // Add district if available
+                    if (event.getLocation().getDistrict() != null && !event.getLocation().getDistrict().isEmpty()) {
+                        fullAddress.append(", ").append(event.getLocation().getDistrict());
+                    }
+
+                    // Add city if available
+                    if (event.getLocation().getCity() != null && !event.getLocation().getCity().isEmpty()) {
+                        fullAddress.append(", ").append(event.getLocation().getCity());
+                    }
+
+                    eventDetails.put("location", fullAddress.toString());
+                } else {
+                    eventDetails.put("location", null); // Don't show the field if no data
+                }
+            } else {
+                // For ONLINE mode, don't set location
+                eventDetails.put("location", null);
+            }
+
+            // Handle online platform if applicable (ONLINE or HYBRID mode)
+            if (event.getMode() == EventMode.ONLINE || event.getMode() == EventMode.HYBRID) {
+                if (event.getPlatform() != null) {
+                    Map<String, String> platformDetails = new HashMap<>();
+                    platformDetails.put("name", event.getPlatform().getName());
+                    if (event.getPlatform().getUrl() != null && !event.getPlatform().getUrl().isEmpty()) {
+                        platformDetails.put("url", event.getPlatform().getUrl());
+                    } else {
+                        platformDetails.put("url", null);
+                    }
+                    eventDetails.put("platform", platformDetails);
+                } else {
+                    eventDetails.put("platform", null); // Don't show the field if no data
+                }
+            } else {
+                // For OFFLINE mode, don't set platform
+                eventDetails.put("platform", null);
+            }
+
+            // Add event mode for display purposes
+            eventDetails.put("mode", event.getMode().toString());
+
+            eventDetails.put("description",
+                    event.getDescription() != null ? event.getDescription() : "No additional details provided.");
+
+            variables.put("eventDetails", eventDetails);
+
+            // Registration details including QR code
+            String checkinUrl = registration.getCheckinUrl();
+            if (checkinUrl != null && !checkinUrl.isEmpty()) {
+                variables.put("checkinUrl", checkinUrl);
+                variables.put("hasQRCode", true);
+            } else {
+                variables.put("hasQRCode", false);
+            }
+
+            variables.put("message", "Your registration for the event has been confirmed. " +
+                    "Please keep this email as reference and bring it with you to the event for check-in.");
+
+            variables.put("buttonText", "View Event Details");
+            variables.put("buttonUrl", "http://localhost:3000/events/" + event.getId());
+
+            // Send the email using the event-notification template
+            emailService.sendEmail(
+                    user.getEmail(),
+                    "Registration Confirmation: " + event.getName(),
+                    "event-registered",
+                    variables);
+
+            logger.info("Registration confirmation email sent to: {}", user.getEmail());
+        } catch (Exception e) {
+            logger.error("Failed to send registration confirmation email: {}", e.getMessage(), e);
+            // Don't rethrow the exception as email sending should not block the
+            // registration process
+        }
+    }
+
+    /**
+     * Sends a registration cancellation email to the user.
+     * 
+     * @param user         The user who cancelled their registration
+     * @param event        The event for which the registration was cancelled
+     * @param registration The registration record
+     */
+    public void sendRegistrationCancellationEmail(User user, Event event, Registration registration) {
+        try {
+            logger.info("Sending registration cancellation email to: {}", user.getEmail());
+
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("title", "Event Registration Cancelled");
+            variables.put("greeting", "Hello " + user.getFullName() + ",");
+
+            Map<String, String> eventDetails = new HashMap<>();
+            eventDetails.put("name", event.getName());
+            eventDetails.put("date", formatEventDateTime(event.getStartTime(), event.getEndTime()));
+
+            eventDetails.put("cancellationTime",
+                    registration.getCanceledAt() != null
+                            ? registration.getCanceledAt().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"))
+                            : LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")));
+
+            eventDetails.put("registrationTime",
+                    registration.getCreatedAt() != null
+                            ? registration.getCreatedAt().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"))
+                            : "N/A");
+
+            variables.put("eventDetails", eventDetails);
+
+            // Cập nhật nội dung message để làm nổi bật dòng chú thích
+            variables.put("message",
+                    "<p>Your registration for the event <strong>" + event.getName()
+                            + "</strong> has been successfully cancelled.</p>" +
+                            "<p class=\"important-note\">" + // Thêm class 'important-note' vào thẻ <p>
+                            "<strong>Please note that you will not be able to re-register for this specific event once your registration has been cancelled.</strong>"
+                            +
+                            "</p>" +
+                            "<p>We regret to see you go, but we hope to welcome you at our other exciting events in the future.</p>");
+
+            variables.put("buttonText", "Explore Other Events");
+            variables.put("buttonUrl", "http://localhost:3000/events");
+            variables.put("hasQRCode", false);
+            variables.put("hasAttachment", false);
+
+            emailService.sendEmail(
+                    user.getEmail(),
+                    "Cancellation: " + event.getName(),
+                    "event-cancelled",
+                    variables);
+
+            logger.info("Registration cancellation email sent to: {}", user.getEmail());
+        } catch (Exception e) {
+            logger.error("Failed to send registration cancellation email: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Helper method to format event date and time in a human-readable format
+     * 
+     * @param startTime Event start time
+     * @param endTime   Event end time
+     * @return Formatted date and time string
+     */
+    private String formatEventDateTime(LocalDateTime startTime, LocalDateTime endTime) {
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+
+        String date = startTime.format(dateFormatter);
+        String startTimeStr = startTime.format(timeFormatter);
+        String endTimeStr = endTime.format(timeFormatter);
+
+        return date + " from " + startTimeStr + " to " + endTimeStr;
     }
 }
