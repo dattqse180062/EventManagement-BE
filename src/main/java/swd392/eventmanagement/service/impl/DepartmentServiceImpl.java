@@ -66,24 +66,24 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     public List<DepartmentShowDTO> getAllDepartments() {
-        logger.info("Getting all departments");
+        logger.info("Getting all active departments");
         try {
-            List<Department> departments = departmentRepository.findAll();
+            List<Department> departments = departmentRepository.findByIsActiveTrue();
 
             if (departments.isEmpty()) {
-                logger.info("No departments found");
-                throw new DepartmentNotFoundException("No departments found in the system");
+                logger.info("No active departments found");
+                throw new DepartmentNotFoundException("No active departments found in the system");
             }
 
-            logger.info("Found {} departments", departments.size());
+            logger.info("Found {} active departments", departments.size());
             return departmentMapper.toDepartmentShowDTOList(departments);
         } catch (DepartmentNotFoundException e) {
             // Just rethrow DepartmentNotFoundException to be handled by the global
             // exception handler
             throw e;
         } catch (Exception e) {
-            logger.error("Error retrieving departments", e);
-            throw new DepartmentProcessingException("Failed to retrieve departments", e);
+            logger.error("Error retrieving active departments", e);
+            throw new DepartmentProcessingException("Failed to retrieve active departments", e);
         }
     }
 
@@ -95,19 +95,19 @@ public class DepartmentServiceImpl implements DepartmentService {
             Department department = departmentRepository.findById(id)
                     .orElseThrow(() -> new DepartmentNotFoundException("Department not found with ID = " + id));
 
-            //Check if new code already exists for another department
+            // Check if new code already exists for another department
             if (!department.getCode().equals(request.getCode()) &&
                     departmentRepository.existsByCode(request.getCode())) {
                 throw new ValidationException("Department code already exists");
             }
 
-            //Check if the new name already exists for another department
+            // Check if the new name already exists for another department
             if (!department.getName().equals(request.getName()) &&
                     departmentRepository.existsByName(request.getName())) {
                 throw new ValidationException("Department name already exists");
             }
 
-            //Update fields
+            // Update fields
             department.setName(request.getName());
             department.setCode(request.getCode());
             department.setAvatarUrl(request.getAvatarUrl());
@@ -128,7 +128,6 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
 
     }
-
 
     @Override
     public DepartmentResponse getDepartmentDetailByCode(Long id) {
@@ -158,9 +157,10 @@ public class DepartmentServiceImpl implements DepartmentService {
         }
 
     }
+
     @Override
     public void updateStatus(Long id, Boolean status) {
-        logger.info("Updating status for department ID: {}",id);
+        logger.info("Updating status for department ID: {}", id);
 
         try {
             Department department = departmentRepository.findById(id)
@@ -168,11 +168,11 @@ public class DepartmentServiceImpl implements DepartmentService {
             department.setIsActive(status);
             departmentRepository.save(department);
 
-            logger.info("Department ID: {} status updated to isActive={}",id , status);
-        }catch (DepartmentNotFoundException e) {
+            logger.info("Department ID: {} status updated to isActive={}", id, status);
+        } catch (DepartmentNotFoundException e) {
             logger.warn("Department not found for ID {}: {}", id, e.getMessage());
             throw e;
-        }catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Unexpected error while updating status for department ID: {}", id, e);
             throw new DepartmentProcessingException("Failed to update status", e);
         }

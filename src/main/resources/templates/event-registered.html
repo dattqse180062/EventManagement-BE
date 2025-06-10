@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title th:text="${title ?: 'Event Notification'}"></title>
+    <style>
+      /* Reset CSS cho email client */
+      body,
+      table,
+      td,
+      a {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+      table,
+      td {
+        mso-table-lspace: 0pt; /*!*/
+        mso-table-rspace: 0pt; /*!*/
+      }
+      img {
+        -ms-interpolation-mode: bicubic;
+      }
+      a[x-apple-data-detectors] {
+        color: inherit !important;
+        text-decoration: none !important;
+        font-size: inherit !important;
+        font-family: inherit !important;
+        font-weight: inherit !important;
+        line-height: inherit !important;
+      }
+
+      /* Global Styles */
+      body {
+        font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif; /* Font hiện đại hơn */
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f7fa; /* Nền tổng thể: Xám xanh rất nhạt */
+      }
+      .container {
+        max-width: 580px; /* Chiều rộng tối ưu */
+        margin: 20px auto; /* Căn giữa, khoảng cách trên/dưới */
+        background-color: #ffffff;
+        border-radius: 10px; /* Bo tròn góc mạnh hơn */
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Đổ bóng mạnh mẽ hơn, hiện đại */
+        border: 1px solid #e0e0e0; /* THÊM VIỀN: Viền xám nhạt cho toàn bộ container */
+      }
+      .header {
+        background-color: #007bff; /* Xanh dương chủ đạo của Bootstrap, rất hiện đại */
+        padding: 35px 25px; /* Tăng padding */
+        color: white;
+        text-align: center;
+        border-bottom: 6px solid #0056b3; /* Xanh đậm hơn cho đường kẻ dưới */
+        /* Có thể thêm background-image gradient để nâng cao nếu muốn */
+        /* background-image: linear-gradient(to right, #007bff, #0056b3); */
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 30px; /* Kích thước tiêu đề lớn hơn */
+        font-weight: 700; /* Đậm hơn */
+        letter-spacing: -0.5px; /* Giảm khoảng cách chữ một chút */
+      }
+      .content {
+        padding: 25px 35px; /* Padding lớn hơn */
+        background-color: #ffffff;
+      }
+      .content p {
+        margin-bottom: 15px; /* Khoảng cách giữa các đoạn văn */
+      }
+      .event-details {
+        background-color: #e6f7ff; /* Nền xanh dương nhạt cho chi tiết sự kiện */
+        padding: 25px;
+        margin: 25px 0;
+        border-radius: 8px;
+        border-left: 6px solid #007bff; /* Xanh dương chủ đạo cho đường kẻ trái */
+      }
+      .event-details h3 {
+        color: #0056b3; /* Xanh đậm hơn */
+        margin-top: 0;
+        margin-bottom: 18px; /* Khoảng cách dưới tiêu đề */
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .event-details p {
+        margin-bottom: 10px;
+      }
+      .event-details strong {
+        color: #495057; /* Xám đậm hơn cho nhãn */
+        font-weight: 600;
+      }
+      .footer {
+        text-align: center;
+        padding: 25px;
+        font-size: 11px; /* Kích thước nhỏ hơn một chút */
+        color: #888; /* Màu xám mềm mại hơn */
+        background-color: #edf2f7; /* Nền xám xanh nhạt hơn */
+        border-top: 1px solid #dee2e6;
+        border-radius: 0 0 10px 10px; /* Bo tròn góc dưới */
+      }
+      .attachment-note {
+        margin-top: 30px;
+        padding: 18px;
+        background-color: #fff3cd; /* Màu vàng cảnh báo nhẹ nhàng */
+        border-left: 5px solid #ffc107; /* Vàng cam đậm hơn */
+        border-radius: 8px;
+        font-size: 0.9em;
+        color: #856404; /* Màu chữ nâu vàng */
+      }
+      .button {
+        display: inline-block;
+        padding: 14px 30px; /* Kích thước nút lớn hơn, dễ bấm */
+        background-color: #007bff;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 6px; /* Bo tròn vừa phải */
+        margin-top: 30px;
+        font-weight: bold;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+        box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3); /* Bóng đổ cho nút */
+        transition: background-color 0.2s ease-in-out;
+      }
+      .button:hover {
+        background-color: #0056b3;
+      }
+      .qr-code-section {
+        margin: 30px 0;
+        text-align: center;
+        background-color: #e0f2f7; /* Nền xanh nhạt cho phần QR */
+        padding: 25px;
+        border-radius: 10px;
+        border: 2px dashed #90caf9; /* Đường viền nét đứt xanh */
+      }
+      .qr-code-section h3 {
+        color: #0056b3;
+        font-size: 20px;
+        margin-bottom: 15px;
+      }
+      .qr-code-section img {
+        max-width: 170px; /* Kích thước QR code */
+        height: auto;
+        margin: 20px 0;
+        border: 5px solid #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Đổ bóng rõ nét hơn */
+        border-radius: 8px;
+      }
+      .qr-code-section p {
+        font-size: 14px;
+        color: #666;
+        margin-top: 10px;
+      }
+      small {
+        font-size: 11px;
+        color: #777;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1 th:text="${title}">Event Registration</h1>
+      </div>
+
+      <div class="content">
+        <p th:text="${greeting}">Hello!</p>
+
+        <div th:utext="${message}">
+          <p>This is a notification about an upcoming event.</p>
+        </div>
+
+        <div class="event-details" th:if="${eventDetails != null}">
+          <h3>Event Details</h3>
+          <p>
+            <strong>Name:</strong>
+            <span th:text="${eventDetails.name}">Event Name</span>
+          </p>
+          <p>
+            <strong>Date:</strong>
+            <span th:text="${eventDetails.date}">June 15, 2025</span>
+          </p>
+          <p th:if="${eventDetails.location != null}">
+            <strong>Location:</strong>
+            <span th:text="${eventDetails.location}"
+              >FPT University, Ward D1, TP.Thủ Đức, Hồ Chí Minh</span
+            >
+          </p>
+          <p th:if="${eventDetails.platform != null}">
+            <strong>Platform:</strong>
+            <span th:text="${eventDetails.platform.name}">Zoom</span>
+            <span th:if="${eventDetails.platform.url != null}">
+              (<a
+                th:href="${eventDetails.platform.url}"
+                th:text="${eventDetails.platform.url}"
+                >https://zoom.us</a
+              >)
+            </span>
+          </p>
+          <p th:if="${eventDetails.checkinWindow != null}">
+            <strong>Check-in Period:</strong>
+            <span th:text="${eventDetails.checkinWindow}"
+              >June 15, 2025 from 9:00 AM to 10:30 AM</span
+            >
+          </p>
+          <p>
+            <strong>Registration Time:</strong>
+            <span th:text="${eventDetails.registrationTime}"
+              >June 10, 2025, 2:30 PM</span
+            >
+          </p>
+          <p>
+            <strong>Description:</strong>
+            <span th:text="${eventDetails.description}"
+              >Event description goes here.</span
+            >
+          </p>
+        </div>
+
+        <div th:if="${hasQRCode == true}" class="qr-code-section">
+          <h3>Your Check-in QR Code</h3>
+          <p>Please present this QR code when you arrive at the event:</p>
+          <img th:src="${checkinUrl}" alt="Check-in QR Code" />
+          <p>
+            <small
+              >Save this email to ensure you have access to your check-in QR
+              code.</small
+            >
+          </p>
+        </div>
+
+        <div th:if="${buttonUrl != null}" style="text-align: center">
+          <a class="button" th:href="${buttonUrl}" th:text="${buttonText}"
+            >View Event Details</a
+          >
+        </div>
+
+        <div class="attachment-note" th:if="${hasAttachment}">
+          <p>
+            Please find the attached document with additional information about
+            this event.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>This is an automated message from the Event Management System.</p>
+        <p>
+          &copy;
+          <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}"
+            >2025</span
+          >
+          FPT University. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
