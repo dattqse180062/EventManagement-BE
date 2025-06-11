@@ -73,6 +73,18 @@ public class RegistrationController {
         return ResponseEntity.ok(registrationService.searchRegistration(eventId, email));
     }
 
+    @PostMapping("/{eventId}/checkin")
+    @Operation(summary = "Check in a participant", description = "Check in a registered participant for an event using their email", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Check-in successful", content = @Content(schema = @Schema(implementation = RegistrationCancelResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Bad Request - Invalid input or check-in not allowed")
+    @ApiResponse(responseCode = "404", description = "Not Found - Event, user or registration not found")
+    @ApiResponse(responseCode = "403", description = "Forbidden - User does not have permission")
+    public ResponseEntity<?> checkin(
+            @PathVariable Long eventId,
+            @RequestParam @Schema(description = "Email of the participant to check in") String email) {
+        return ResponseEntity.ok(registrationService.checkin(eventId, email));
+    }
+
     @PostMapping("/checkin")
     @Operation(summary = "Check in a participant", description = "Check in a registered participant for an event using encrypted data", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponse(responseCode = "200", description = "Check-in successful", content = @Content(schema = @Schema(implementation = RegistrationCancelResponse.class)))
