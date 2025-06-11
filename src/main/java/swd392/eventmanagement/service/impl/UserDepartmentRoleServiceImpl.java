@@ -1,5 +1,6 @@
 package swd392.eventmanagement.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +88,52 @@ public class UserDepartmentRoleServiceImpl implements UserDepartmentRoleService 
         } catch (Exception e) {
             logger.error("Error retrieving  department roles", e);
             throw new DepartmentRoleProcessingException("Failed to get department role", e);
+        }
+    }
+
+    @Override
+    public UserDepartmentRole updateUserDepartmentRole(Long userId, Long departmentId, Long newDepartmentRoleId) {
+        logger.info("Updating role of user with ID: {} in department with ID: {} to new role with ID: {}", userId, departmentId, newDepartmentRoleId);
+
+        try {
+            // Find user by ID
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+            // Find department by ID
+            Department department = departmentRepository.findById(departmentId)
+                    .orElseThrow(() -> new DepartmentNotFoundException("Department not found with ID: " + departmentId));
+
+            // Find new department role by ID
+            DepartmentRole newRole = departmentRoleRepository.findById(newDepartmentRoleId)
+                    .orElseThrow(() -> new DepartmentRoleNotFoundException("Department role not found with ID: " + newDepartmentRoleId));
+
+            // Find existing relationship between user and department
+            UserDepartmentRole existing = userDepartmentRoleRepository
+                    .findByUserAndDepartment(user, department)
+                    .orElseThrow(() -> new EntityNotFoundException("User has not been assigned to this department."));
+
+            // If the user already has the same role, no update needed
+            if (existing.getDepartmentRole().equals(newRole)) {
+                throw new ValidationException("User already has this role in the department.");
+            }
+
+            // Check for conflict if the same user, department, and role combination already exists
+            boolean conflict = userDepartmentRoleRepository.existsByUserAndDepartmentAndDepartmentRole(user, department, newRole);
+            if (conflict) {
+                throw new ValidationException("User has already been assigned this role in the department.");
+            }
+
+            // Update role
+            existing.setDepartmentRole(newRole);
+            return userDepartmentRoleRepository.save(existing);
+
+        } catch (ValidationException e) {
+            logger.warn("Validation error while updating user role: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error occurred while updating user role in department", e);
+            throw new DepartmentRoleProcessingException("Failed to update user role in department", e);
         }
     }
 }
