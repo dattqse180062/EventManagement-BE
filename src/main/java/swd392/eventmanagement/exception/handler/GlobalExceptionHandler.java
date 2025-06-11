@@ -364,6 +364,17 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+        //DepartmentRoleProcessingException
+        @ExceptionHandler(DepartmentRoleProcessingException.class)
+        public ResponseEntity<ErrorResponse> handleDepartmentRoleProcessingException(DepartmentRoleProcessingException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        LocalDateTime.now(),
+                        ex.getMessage(),
+                        request.getDescription(false));
+                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
 
         // Error response class
         @Data

@@ -13,6 +13,8 @@ import swd392.eventmanagement.model.mapper.UserMapper;
 import swd392.eventmanagement.repository.UserRepository;
 import swd392.eventmanagement.service.UserService;
 
+import java.util.List;
+
 @Service
 public class UserServiceImpl implements UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -63,6 +65,27 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             logger.error("Error retrieving user with email: {}", email, e);
             throw new UserProcessingException("Failed to retrieve user by email", e);
+        }
+    }
+
+    @Override
+    public List<UserDTO> getUsersNotInDepartment() {
+        logger.info("Getting users not assigned to any role in any department");
+        try {
+            List<User> users = userRepository.findLecturerUsersNotAssignedToAnyDepartmentRole();
+
+            if (users.isEmpty()) {
+                logger.info("No unassigned users found in any department");
+                throw new UserNotFoundException("No users found without department roles");
+            }
+
+            logger.info("Found {} users not assigned to any department role", users.size());
+            return userMapper.toUserShowDTOList(users);
+        } catch (UserNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving users not assigned to any department role", e);
+            throw new UserProcessingException("Failed to retrieve users not assigned to department roles", e);
         }
     }
 }

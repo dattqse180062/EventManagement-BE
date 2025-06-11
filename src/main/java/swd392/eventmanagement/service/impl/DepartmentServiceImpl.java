@@ -5,15 +5,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import swd392.eventmanagement.exception.DepartmentNotFoundException;
-import swd392.eventmanagement.exception.DepartmentProcessingException;
-import swd392.eventmanagement.exception.ValidationException;
+import swd392.eventmanagement.exception.*;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
 import swd392.eventmanagement.model.dto.response.DepartmentResponse;
 import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.mapper.DepartmentMapper;
+import swd392.eventmanagement.model.mapper.DepartmentRoleMapper;
 import swd392.eventmanagement.repository.DepartmentRepository;
+import swd392.eventmanagement.repository.DepartmentRoleRepository;
 import swd392.eventmanagement.service.DepartmentService;
 
 import java.util.List;
@@ -25,6 +25,8 @@ public class DepartmentServiceImpl implements DepartmentService {
     private static final Logger logger = LoggerFactory.getLogger(DepartmentServiceImpl.class);
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
+    private final DepartmentRoleRepository departmentRoleRepository;
+    private final DepartmentRoleMapper departmentRoleMapper;
 
     @Transactional
     @Override
@@ -177,4 +179,5 @@ public class DepartmentServiceImpl implements DepartmentService {
             throw new DepartmentProcessingException("Failed to update status", e);
         }
     }
+
 }
