@@ -9,4 +9,6 @@ public interface UserDepartmentRoleService {
     UserDepartmentRole assignRole(Long userId, Long departmentId, Long departmentRoleId);
 
     List<DepartmentRoleShowDTO> getAllDepartmentRoles();
+
+    public UserDepartmentRole updateUserDepartmentRole(Long userId, Long departmentId, Long newDepartmentRoleId);
 }

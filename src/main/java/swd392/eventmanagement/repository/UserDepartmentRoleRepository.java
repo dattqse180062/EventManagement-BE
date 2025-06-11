@@ -21,4 +21,7 @@ public interface UserDepartmentRoleRepository extends JpaRepository<UserDepartme
 
     boolean existsByUserAndDepartmentAndDepartmentRole(User user, Department department, DepartmentRole departmentRole);
 
+
+    Optional<UserDepartmentRole> findByUserAndDepartment(User user, Department department);
+
 }

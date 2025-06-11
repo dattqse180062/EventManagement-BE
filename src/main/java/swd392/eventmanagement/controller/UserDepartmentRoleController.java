@@ -81,4 +81,34 @@ public class UserDepartmentRoleController {
     public ResponseEntity<?> getAllDepartmentRoles() {
         return ResponseEntity.ok(userDepartmentRoleService.getAllDepartmentRoles());
     }
+    @PutMapping("/update-role")
+    @Operation(
+            summary = "Update user's department role",
+            description = "Updates the role of a user in a specific department",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "User's department role updated successfully"
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Bad Request - Validation failed"
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - User does not have permission"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Not Found - User, Department, or Role not found"
+    )
+    public ResponseEntity<String> updateUserDepartmentRole(
+            @RequestParam Long userId,
+            @RequestParam Long departmentId,
+            @RequestParam Long departmentRoleId
+    ) {
+        userDepartmentRoleService.updateUserDepartmentRole(userId, departmentId, departmentRoleId);
+        return ResponseEntity.ok("User's department role updated successfully.");
+    }
 }
