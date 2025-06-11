@@ -29,4 +29,29 @@ public class UserController {
     public ResponseEntity<?> getCurrentUser() {
         return ResponseEntity.ok(userService.getCurrentUser());
     }
+
+    @GetMapping("/users/unassigned")
+    @Operation(
+            summary = "Get all users not assigned to any department role",
+            description = "Returns a list of users who have not been assigned any role in any department",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Users retrieved successfully",
+            content = @Content(schema = @Schema(implementation = UserDTO.class))
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - User does not have permission"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Not Found - No users found without department roles"
+    )
+    public ResponseEntity<?> getUsersNotInAnyDepartmentRole() {
+        return ResponseEntity.ok(userService.getUsersNotInDepartment());
+    }
+
+
 }

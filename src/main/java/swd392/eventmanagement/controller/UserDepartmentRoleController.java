@@ -10,11 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.AssignRoleRequest;
+import swd392.eventmanagement.model.dto.response.DepartmentRoleShowDTO;
 import swd392.eventmanagement.service.impl.UserDepartmentRoleServiceImpl;
 
 import java.util.Map;
@@ -59,5 +57,28 @@ public class UserDepartmentRoleController {
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Role assigned successfully"));
+    }
+
+    @GetMapping("")
+    @Operation(
+            summary = "Get all department roles",
+            description = "Returns a list of all department roles in the system",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Department roles retrieved successfully",
+            content = @Content(schema = @Schema(implementation = DepartmentRoleShowDTO.class))
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - User does not have permission"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Not Found - No department roles found in the system"
+    )
+    public ResponseEntity<?> getAllDepartmentRoles() {
+        return ResponseEntity.ok(userDepartmentRoleService.getAllDepartmentRoles());
     }
 }

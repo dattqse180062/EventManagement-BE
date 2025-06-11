@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.DepartmentRequest;
 import swd392.eventmanagement.model.dto.request.UpdateDepartmentStatusRequest;
 import swd392.eventmanagement.model.dto.response.DepartmentResponse;
+import swd392.eventmanagement.model.dto.response.DepartmentRoleShowDTO;
 import swd392.eventmanagement.model.dto.response.DepartmentShowDTO;
 import swd392.eventmanagement.service.impl.DepartmentServiceImpl;
 
@@ -145,6 +146,8 @@ public class DepartmentController {
         departmentService.updateStatus(id, request.isActive());
         return ResponseEntity.ok(Map.of("message", "Department status updated successfully"));
     }
+
+
 
 
 
