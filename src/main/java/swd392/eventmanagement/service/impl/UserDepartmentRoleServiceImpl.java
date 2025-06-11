@@ -136,4 +136,28 @@ public class UserDepartmentRoleServiceImpl implements UserDepartmentRoleService 
             throw new DepartmentRoleProcessingException("Failed to update user role in department", e);
         }
     }
+
+    @Override
+    public void removeUserFromDepartment(Long userId, Long departmentId) {
+        try {
+            logger.info("Removing user {} from department {}", userId, departmentId);
+
+            UserDepartmentRole relation = userDepartmentRoleRepository
+                    .findByUserIdAndDepartmentId(userId, departmentId)
+                    .orElseThrow(() -> {
+                        logger.warn("User {} is not in department {}", userId, departmentId);
+                        return new UserNotFoundException("User is not in this department");
+                    });
+
+            userDepartmentRoleRepository.delete(relation);
+
+            logger.info("Successfully removed user {} from department {}", userId, departmentId);
+        } catch (EntityNotFoundException e) {
+
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error occurred while removing user {} from department {}: {}", userId, departmentId, e.getMessage(), e);
+            throw new DepartmentRoleProcessingException("Failed to remove user from department");
+        }
+    }
 }

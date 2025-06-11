@@ -11,4 +11,6 @@ public interface UserDepartmentRoleService {
     List<DepartmentRoleShowDTO> getAllDepartmentRoles();
 
     public UserDepartmentRole updateUserDepartmentRole(Long userId, Long departmentId, Long newDepartmentRoleId);
+
+    public void removeUserFromDepartment(Long userId, Long departmentId);
 }
