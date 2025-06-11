@@ -72,17 +72,67 @@ public class SurveyController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Get survey detail", description = "Retrieve a survey along with its questions and options by survey ID")
+    @Operation(
+            summary = "View draft survey by event ID",
+            description = "Retrieve a survey in DRAFT status along with its questions and options by event ID"
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Survey retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Survey not found"),
+            @ApiResponse(responseCode = "200", description = "Draft survey retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Survey is not in DRAFT status"),
+            @ApiResponse(responseCode = "404", description = "Event or Survey not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    @GetMapping("/{surveyId}")
-    public ResponseEntity<SurveyResponse> getSurveyDetail(@PathVariable Long surveyId) {
-        SurveyResponse surveyResponse = surveyService.viewSurveyById(surveyId);
+    @GetMapping("/events/{eventId}/survey/draft")
+    public ResponseEntity<SurveyResponse> getDraftSurveyByEvent(@PathVariable Long eventId) {
+        SurveyResponse surveyResponse = surveyService.viewSurveyDetailByEventIdAndDraftStatus(eventId);
         return ResponseEntity.ok(surveyResponse);
     }
+
+    @Operation(
+            summary = "View opened survey by event ID",
+            description = "Retrieve a public (OPENED) survey along with its questions and options by event ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Opened survey retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Survey is not in OPENED status"),
+            @ApiResponse(responseCode = "404", description = "Event or Survey not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/events/{eventId}/survey/opened")
+    public ResponseEntity<SurveyResponse> getOpenedSurveyByEvent(@PathVariable Long eventId) {
+        SurveyResponse surveyResponse = surveyService.viewSurveyDetailByEventIdAndOpenStatus(eventId);
+        return ResponseEntity.ok(surveyResponse);
+    }
+
+    @Operation(
+            summary = "Delete a survey",
+            description = "Delete a survey along with its questions and options by survey ID. " +
+                    "Only users with HEAD role can perform this action on surveys belonging to their own department.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Survey deleted successfully",
+                    content = @Content(schema = @Schema(example = "Survey deleted successfully"))),
+            @ApiResponse(responseCode = "403", description = "Access denied - User does not have permission for the specified department",
+                    content = @Content(schema = @Schema(example = "Access denied: department mismatch"))),
+            @ApiResponse(responseCode = "404", description = "Survey not found",
+                    content = @Content(schema = @Schema(example = "Survey not found with id: 123"))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(schema = @Schema(example = "Failed to remove survey with id: 123")))
+    })
+    @DeleteMapping("/{surveyId}")
+    public ResponseEntity<String> deleteSurvey(
+            @PathVariable Long surveyId,
+            @RequestParam("eventId") Long eventId,
+            @RequestParam("departmentCode") String departmentCode
+    ) {
+        surveyService.removeSurvey(surveyId, eventId, departmentCode);
+        return ResponseEntity.ok("Survey deleted successfully");
+    }
+
+
+
+
 
 
 

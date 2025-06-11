@@ -10,7 +10,7 @@ import java.util.List;
 
 public class SurveyUpdateRequest {
 
-
+    private Long EventId;
     private String title;
     private String description;
     private LocalDateTime startTime;

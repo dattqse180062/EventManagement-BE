@@ -73,4 +73,6 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
                         "ORDER BY ec.priority DESC")
         List<Event> findEventsByCategoryCodeOrderByPriority(
                         @Param("categoryCode") String categoryCode);
+
+        Optional<Event> findBySurveyId(Long surveyId);
 }
