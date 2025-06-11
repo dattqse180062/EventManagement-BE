@@ -24,4 +24,6 @@ public interface UserDepartmentRoleRepository extends JpaRepository<UserDepartme
 
     Optional<UserDepartmentRole> findByUserAndDepartment(User user, Department department);
 
+    Optional<UserDepartmentRole> findByUserIdAndDepartmentId(Long userId, Long departmentId);
+
 }

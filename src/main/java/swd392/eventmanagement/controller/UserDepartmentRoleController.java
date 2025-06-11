@@ -111,4 +111,26 @@ public class UserDepartmentRoleController {
         userDepartmentRoleService.updateUserDepartmentRole(userId, departmentId, departmentRoleId);
         return ResponseEntity.ok("User's department role updated successfully.");
     }
+
+    @DeleteMapping("/remove-user-from-department")
+    @Operation(
+            summary = "Remove user from department",
+            description = "Hard delete the relation between user and department",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "User removed from department successfully"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "User or Department relation not found"
+    )
+    public ResponseEntity<?> removeUserFromDepartment(
+            @RequestParam Long userId,
+            @RequestParam Long departmentId
+    ) {
+        userDepartmentRoleService.removeUserFromDepartment(userId, departmentId);
+        return ResponseEntity.ok("User removed from department successfully");
+    }
 }
