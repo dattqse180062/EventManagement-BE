@@ -8,4 +8,6 @@ public interface SurveyService {
     SurveyResponse createSurveyWithQuestions(SurveyCreateRequest request, String departmentCode);
 
     SurveyResponse updateSurveyWithQuestions(Long surveyId, SurveyUpdateRequest request, String departmentCode);
+
+    public SurveyResponse viewSurveyById(Long surveyId);
 }
