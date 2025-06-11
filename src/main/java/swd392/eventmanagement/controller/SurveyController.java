@@ -72,6 +72,22 @@ public class SurveyController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Get survey detail", description = "Retrieve a survey along with its questions and options by survey ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Survey retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Survey not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/{surveyId}")
+    public ResponseEntity<SurveyResponse> getSurveyDetail(@PathVariable Long surveyId) {
+        SurveyResponse surveyResponse = surveyService.viewSurveyById(surveyId);
+        return ResponseEntity.ok(surveyResponse);
+    }
+
+
+
+
+
 
 
 

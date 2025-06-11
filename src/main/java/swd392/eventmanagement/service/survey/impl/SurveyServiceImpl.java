@@ -303,4 +303,50 @@ public class SurveyServiceImpl implements SurveyService {
 
         return surveyResponse;
     }
+
+    @Override
+    public SurveyResponse viewSurveyById(Long surveyId) {
+        logger.info("Viewing survey with ID: {}", surveyId);
+
+        // get survey by id
+        Survey survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new SurveyNotFoundException("Survey not found with id: " + surveyId));
+
+        //mapping question and option
+        List<QuestionResponse> questionResponses = survey.getQuestions().stream().map(question -> {
+            QuestionResponse questionResponse = new QuestionResponse();
+            questionResponse.setId(question.getId());
+            questionResponse.setQuestion(question.getQuestion());
+            questionResponse.setOrderNum(question.getOrderNum());
+            questionResponse.setType(question.getType());
+            questionResponse.setIsRequired(question.getIsRequired());
+
+            List<OptionResponse> optionResponses = question.getOptions() != null
+                    ? question.getOptions().stream().map(opt -> {
+                OptionResponse oResp = new OptionResponse();
+                oResp.setId(opt.getId());
+                oResp.setText(opt.getText());
+                oResp.setOrderNum(opt.getOrderNum());
+                return oResp;
+            }).collect(Collectors.toList())
+                    : new ArrayList<>();
+
+            questionResponse.setOptions(optionResponses);
+            return questionResponse;
+        }).collect(Collectors.toList());
+
+        // Mapping SurveyResponse
+        SurveyResponse surveyResponse = new SurveyResponse();
+        surveyResponse.setId(survey.getId());
+        surveyResponse.setTitle(survey.getTitle());
+        surveyResponse.setDescription(survey.getDescription());
+        surveyResponse.setStartTime(survey.getStartTime());
+        surveyResponse.setEndTime(survey.getEndTime());
+        surveyResponse.setStatus(survey.getStatus());
+        surveyResponse.setCreatedAt(survey.getCreatedAt());
+        surveyResponse.setUpdatedAt(survey.getUpdatedAt());
+        surveyResponse.setQuestions(questionResponses);
+
+        return surveyResponse;
+    }
 }
