@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import swd392.eventmanagement.enums.SurveyStatus;
+import swd392.eventmanagement.exception.AccessDeniedException;
+import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.SurveyNotFoundException;
 import swd392.eventmanagement.exception.SurveyProcessingException;
 import swd392.eventmanagement.model.dto.request.*;
@@ -45,6 +47,8 @@ public class SurveyServiceImpl implements SurveyService {
         logger.info("Creating new survey with title: {}", request.getTitle());
 
         surveyManageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+        surveyManageAccessValidator.validateEventBelongsToUserDepartment(request.getEventId(), departmentCode);
 
         try {
             // Check if the event exists
@@ -166,6 +170,8 @@ public class SurveyServiceImpl implements SurveyService {
         logger.info("Updating survey id: {}", surveyId);
 
         surveyManageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+        surveyManageAccessValidator.validateEventBelongsToUserDepartment(request.getEventId(), departmentCode);
 
         Survey survey = surveyRepository.findById(surveyId)
                 .orElseThrow(() -> new SurveyNotFoundException("Survey with id " + surveyId + " not found"));
@@ -305,48 +311,166 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
-    public SurveyResponse viewSurveyById(Long surveyId) {
-        logger.info("Viewing survey with ID: {}", surveyId);
+    public SurveyResponse viewSurveyDetailByEventIdAndDraftStatus(Long eventId) {
+        logger.info("Viewing survey detail for event ID: {}", eventId);
 
-        // get survey by id
-        Survey survey = surveyRepository.findById(surveyId)
-                .orElseThrow(() -> new SurveyNotFoundException("Survey not found with id: " + surveyId));
+        try {
 
-        //mapping question and option
-        List<QuestionResponse> questionResponses = survey.getQuestions().stream().map(question -> {
-            QuestionResponse questionResponse = new QuestionResponse();
-            questionResponse.setId(question.getId());
-            questionResponse.setQuestion(question.getQuestion());
-            questionResponse.setOrderNum(question.getOrderNum());
-            questionResponse.setType(question.getType());
-            questionResponse.setIsRequired(question.getIsRequired());
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
 
-            List<OptionResponse> optionResponses = question.getOptions() != null
-                    ? question.getOptions().stream().map(opt -> {
-                OptionResponse oResp = new OptionResponse();
-                oResp.setId(opt.getId());
-                oResp.setText(opt.getText());
-                oResp.setOrderNum(opt.getOrderNum());
-                return oResp;
-            }).collect(Collectors.toList())
-                    : new ArrayList<>();
 
-            questionResponse.setOptions(optionResponses);
-            return questionResponse;
-        }).collect(Collectors.toList());
+            Survey survey = event.getSurvey();
+            if (survey == null) {
+                throw new SurveyNotFoundException("Survey not found for event with id: " + eventId);
+            }
 
-        // Mapping SurveyResponse
-        SurveyResponse surveyResponse = new SurveyResponse();
-        surveyResponse.setId(survey.getId());
-        surveyResponse.setTitle(survey.getTitle());
-        surveyResponse.setDescription(survey.getDescription());
-        surveyResponse.setStartTime(survey.getStartTime());
-        surveyResponse.setEndTime(survey.getEndTime());
-        surveyResponse.setStatus(survey.getStatus());
-        surveyResponse.setCreatedAt(survey.getCreatedAt());
-        surveyResponse.setUpdatedAt(survey.getUpdatedAt());
-        surveyResponse.setQuestions(questionResponses);
 
-        return surveyResponse;
+            if (survey.getStatus() != SurveyStatus.DRAFT) {
+                throw new AccessDeniedException("Survey for event with id " + eventId + " is not public.");
+            }
+
+
+            List<QuestionResponse> questionResponses = survey.getQuestions().stream().map(question -> {
+                QuestionResponse questionResponse = new QuestionResponse();
+                questionResponse.setId(question.getId());
+                questionResponse.setQuestion(question.getQuestion());
+                questionResponse.setOrderNum(question.getOrderNum());
+                questionResponse.setType(question.getType());
+                questionResponse.setIsRequired(question.getIsRequired());
+
+                List<OptionResponse> optionResponses = question.getOptions() != null
+                        ? question.getOptions().stream().map(opt -> {
+                    OptionResponse oResp = new OptionResponse();
+                    oResp.setId(opt.getId());
+                    oResp.setText(opt.getText());
+                    oResp.setOrderNum(opt.getOrderNum());
+                    return oResp;
+                }).collect(Collectors.toList())
+                        : new ArrayList<>();
+
+                questionResponse.setOptions(optionResponses);
+                return questionResponse;
+            }).collect(Collectors.toList());
+
+
+            SurveyResponse surveyResponse = new SurveyResponse();
+            surveyResponse.setId(survey.getId());
+            surveyResponse.setTitle(survey.getTitle());
+            surveyResponse.setDescription(survey.getDescription());
+            surveyResponse.setStartTime(survey.getStartTime());
+            surveyResponse.setEndTime(survey.getEndTime());
+            surveyResponse.setStatus(survey.getStatus());
+            surveyResponse.setCreatedAt(survey.getCreatedAt());
+            surveyResponse.setUpdatedAt(survey.getUpdatedAt());
+            surveyResponse.setQuestions(questionResponses);
+
+            return surveyResponse;
+
+        } catch (SurveyNotFoundException | EventNotFoundException | AccessDeniedException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.error("Failed to view survey detail for event id: {}", eventId, ex);
+            throw new SurveyProcessingException("Failed to view survey detail for event id: " + eventId, ex);
+        }
     }
+
+    @Override
+    public void removeSurvey(Long surveyId, Long eventId, String departmentCode) {
+        try {
+            // 1. Validate user access to the specified department
+            surveyManageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+            // 2. Validate that the event belongs to the user's department
+            surveyManageAccessValidator.validateEventBelongsToUserDepartment(eventId, departmentCode);
+
+            // 3. Find the survey
+            Survey survey = surveyRepository.findById(surveyId)
+                    .orElseThrow(() -> new SurveyNotFoundException("Survey not found with id: " + surveyId));
+
+            // 4. Unlink the survey from the event (if exists)
+            eventRepository.findById(eventId).ifPresent(event -> {
+                event.setSurvey(null);
+                eventRepository.save(event);
+            });
+
+            // 5. Delete the survey (cascade will delete questions and options)
+            surveyRepository.delete(survey);
+            logger.info("Removed survey (and related questions/options) with id: {}", surveyId);
+
+        } catch (AccessDeniedException ex) {
+            throw ex;
+        } catch (SurveyNotFoundException | EventNotFoundException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.error("Failed to remove survey with id: {}", surveyId, ex);
+            throw new SurveyProcessingException("Failed to remove survey with id: " + surveyId, ex);
+        }
+    }
+
+    @Override
+    public SurveyResponse viewSurveyDetailByEventIdAndOpenStatus(Long eventId) {
+        logger.info("Viewing survey detail for event ID: {}", eventId);
+
+        try {
+
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+
+            Survey survey = event.getSurvey();
+            if (survey == null) {
+                throw new SurveyNotFoundException("Survey not found for event with id: " + eventId);
+            }
+
+
+            if (survey.getStatus() != SurveyStatus.OPENED) {
+                throw new AccessDeniedException("Survey for event with id " + eventId + " is not public.");
+            }
+
+
+            List<QuestionResponse> questionResponses = survey.getQuestions().stream().map(question -> {
+                QuestionResponse questionResponse = new QuestionResponse();
+                questionResponse.setId(question.getId());
+                questionResponse.setQuestion(question.getQuestion());
+                questionResponse.setOrderNum(question.getOrderNum());
+                questionResponse.setType(question.getType());
+                questionResponse.setIsRequired(question.getIsRequired());
+
+                List<OptionResponse> optionResponses = question.getOptions() != null
+                        ? question.getOptions().stream().map(opt -> {
+                    OptionResponse oResp = new OptionResponse();
+                    oResp.setId(opt.getId());
+                    oResp.setText(opt.getText());
+                    oResp.setOrderNum(opt.getOrderNum());
+                    return oResp;
+                }).collect(Collectors.toList())
+                        : new ArrayList<>();
+
+                questionResponse.setOptions(optionResponses);
+                return questionResponse;
+            }).collect(Collectors.toList());
+
+
+            SurveyResponse surveyResponse = new SurveyResponse();
+            surveyResponse.setId(survey.getId());
+            surveyResponse.setTitle(survey.getTitle());
+            surveyResponse.setDescription(survey.getDescription());
+            surveyResponse.setStartTime(survey.getStartTime());
+            surveyResponse.setEndTime(survey.getEndTime());
+            surveyResponse.setStatus(survey.getStatus());
+            surveyResponse.setCreatedAt(survey.getCreatedAt());
+            surveyResponse.setUpdatedAt(survey.getUpdatedAt());
+            surveyResponse.setQuestions(questionResponses);
+
+            return surveyResponse;
+
+        } catch (SurveyNotFoundException | EventNotFoundException | AccessDeniedException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.error("Failed to view survey detail for event id: {}", eventId, ex);
+            throw new SurveyProcessingException("Failed to view survey detail for event id: " + eventId, ex);
+        }
+    }
+
 }

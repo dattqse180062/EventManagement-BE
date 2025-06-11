@@ -7,14 +7,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import swd392.eventmanagement.exception.AccessDeniedException;
 import swd392.eventmanagement.exception.DepartmentNotFoundException;
+import swd392.eventmanagement.exception.EventNotFoundException;
 import swd392.eventmanagement.exception.UserNotFoundException;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.entity.DepartmentRole;
+import swd392.eventmanagement.model.entity.Event;
 import swd392.eventmanagement.model.entity.User;
-import swd392.eventmanagement.repository.DepartmentRepository;
-import swd392.eventmanagement.repository.DepartmentRoleRepository;
-import swd392.eventmanagement.repository.UserDepartmentRoleRepository;
-import swd392.eventmanagement.repository.UserRepository;
+import swd392.eventmanagement.repository.*;
 import swd392.eventmanagement.security.service.UserDetailsImpl;
 import swd392.eventmanagement.service.event.validator.EventManageAccessValidator;
 
@@ -27,16 +26,21 @@ public class SurveyManageAccessValidator {
     private final UserDepartmentRoleRepository userDepartmentRoleRepository;
     private final DepartmentRoleRepository departmentRoleRepository;
     private final UserRepository userRepository;
+    private final EventRepository eventRepository;
 
     public SurveyManageAccessValidator(
             DepartmentRepository departmentRepository,
             UserDepartmentRoleRepository userDepartmentRoleRepository,
             DepartmentRoleRepository departmentRoleRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            EventRepository eventRepository
+    ) {
         this.departmentRepository = departmentRepository;
         this.userDepartmentRoleRepository = userDepartmentRoleRepository;
         this.departmentRoleRepository = departmentRoleRepository;
         this.userRepository = userRepository;
+        this.eventRepository = eventRepository;
+
     }
 
 
@@ -109,6 +113,15 @@ public class SurveyManageAccessValidator {
         } catch (Exception e) {
             logger.error("Error checking if user is HEAD of department: {}", department.getCode(), e);
             return false;
+        }
+    }
+
+    public void validateEventBelongsToUserDepartment(Long eventId, String departmentCode) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException("Not found event with id: " + eventId));
+
+        if (!event.getDepartment().getCode().equals(departmentCode)) {
+            throw new AccessDeniedException("You do not have permission to operate on an event that does not belong to your department.");
         }
     }
 }

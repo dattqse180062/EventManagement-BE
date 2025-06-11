@@ -9,5 +9,9 @@ public interface SurveyService {
 
     SurveyResponse updateSurveyWithQuestions(Long surveyId, SurveyUpdateRequest request, String departmentCode);
 
-    public SurveyResponse viewSurveyById(Long surveyId);
+    public SurveyResponse viewSurveyDetailByEventIdAndOpenStatus(Long eventId);
+
+    void removeSurvey(Long surveyId, Long eventId, String departmentCode);
+
+    public SurveyResponse viewSurveyDetailByEventIdAndDraftStatus(Long eventId);
 }
