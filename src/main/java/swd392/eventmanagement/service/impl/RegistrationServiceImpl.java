@@ -247,6 +247,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         } catch (IllegalArgumentException e) {
             logger.error("Invalid input parameters: {}", e.getMessage());
             throw e;
+        } catch (AccessDeniedException e) {
+            logger.error("Access denied for check-in: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Unexpected error during check-in: {}", e.getMessage(), e);
             throw new EventRegistrationException("An unexpected error occurred during check-in");
@@ -408,7 +411,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                         " to " +
                         event.getCheckinEnd().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")));
             } // Set location and platform separately instead of combining them
-            // Handle physical location if applicable (OFFLINE or HYBRID mode)
+              // Handle physical location if applicable (OFFLINE or HYBRID mode)
             if (event.getMode() == EventMode.OFFLINE || event.getMode() == EventMode.HYBRID) {
                 if (event.getLocation() != null) {
                     // Include full address details with city, ward, district
