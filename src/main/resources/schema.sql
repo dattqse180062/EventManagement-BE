@@ -1,3 +1,38 @@
+-- Drop existing tables and enums (in reverse dependency order)
+DROP TABLE IF EXISTS event_categories CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS event_staffs CASCADE;
+DROP TABLE IF EXISTS staff_roles CASCADE;
+DROP TABLE IF EXISTS answers CASCADE;
+DROP TABLE IF EXISTS responses CASCADE;
+DROP TABLE IF EXISTS registrations CASCADE;
+DROP TABLE IF EXISTS event_tags CASCADE;
+DROP TABLE IF EXISTS tags CASCADE;
+DROP TABLE IF EXISTS images CASCADE;
+DROP TABLE IF EXISTS event_capacity CASCADE;
+DROP TABLE IF EXISTS events CASCADE;
+DROP TABLE IF EXISTS platforms CASCADE;
+DROP TABLE IF EXISTS locations CASCADE;
+DROP TABLE IF EXISTS event_types CASCADE;
+DROP TABLE IF EXISTS user_department_roles CASCADE;
+DROP TABLE IF EXISTS departments CASCADE;
+DROP TABLE IF EXISTS department_roles CASCADE;
+DROP TABLE IF EXISTS refresh_tokens CASCADE;
+DROP TABLE IF EXISTS user_roles CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS roles CASCADE;
+DROP TABLE IF EXISTS options CASCADE;
+DROP TABLE IF EXISTS questions CASCADE;
+DROP TABLE IF EXISTS surveys CASCADE;
+
+-- Drop existing enums
+DROP TYPE IF EXISTS registration_status CASCADE;
+DROP TYPE IF EXISTS event_status CASCADE;
+DROP TYPE IF EXISTS event_mode CASCADE;
+DROP TYPE IF EXISTS target_audience CASCADE;
+DROP TYPE IF EXISTS question_type_enum CASCADE;
+DROP TYPE IF EXISTS survey_status_enum CASCADE;
+
 -- Roles
 CREATE TABLE roles (
     id BIGSERIAL,
@@ -274,7 +309,7 @@ CREATE TABLE registrations (
     id BIGSERIAL,
     user_id BIGINT NOT NULL,
     event_id BIGINT NOT NULL,
-    checkin_url VARCHAR(255),
+    checkin_code VARCHAR(255),
     status registration_status NOT NULL,
     canceled_at TIMESTAMP,
     attended BOOLEAN DEFAULT FALSE,
@@ -525,7 +560,7 @@ INSERT INTO event_tags (event_id, tag_id) VALUES
 
 -- Registrations
 INSERT INTO registrations (
-    user_id, event_id, checkin_url, status, canceled_at,
+    user_id, event_id, checkin_code, status, canceled_at,
     attended, survey_done, checkin_at,
     created_at, updated_at
 ) VALUES
