@@ -25,13 +25,12 @@ public class Registration {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
     @ManyToOne
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @Column(name = "checkin_url")
-    private String checkinUrl;
+    @Column(name = "checkin_code")
+    private String checkinCode;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

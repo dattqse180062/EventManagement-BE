@@ -1,7 +1,7 @@
-package swd392.eventmanagement.service.impl;
+package swd392.eventmanagement.service.registration.helper;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -9,8 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
 
-@Service
-public class EncryptionService {
+@Component
+public class CheckinCodeEncrypter {
 
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";

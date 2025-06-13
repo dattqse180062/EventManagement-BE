@@ -134,19 +134,15 @@
         border-radius: 10px;
         border: 2px dashed #90caf9; /* Đường viền nét đứt xanh */
       }
-      .qr-code-section h3 {
-        color: #0056b3;
-        font-size: 20px;
-        margin-bottom: 15px;
-      }
-      .qr-code-section img {
-        max-width: 170px; /* Kích thước QR code */
+      /* Loại bỏ CSS liên quan đến ảnh QR code nhúng nếu không dùng nữa */
+      /* .qr-code-section img {
+        max-width: 170px;
         height: auto;
         margin: 20px 0;
         border: 5px solid #ffffff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Đổ bóng rõ nét hơn */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         border-radius: 8px;
-      }
+      } */
       .qr-code-section p {
         font-size: 14px;
         color: #666;
@@ -219,9 +215,38 @@
         </div>
 
         <div th:if="${hasQRCode == true}" class="qr-code-section">
-          <h3>Your Check-in QR Code</h3>
-          <p>Please present this QR code when you arrive at the event:</p>
-          <img th:src="${checkinUrl}" alt="Check-in QR Code" />
+          <h3>📱 Your Check-in QR Code</h3>
+          <p>
+            Your unique QR code for event check-in has been attached to this
+            email.
+          </p>
+
+          <div
+            style="
+              background-color: #e8f5e8;
+              padding: 15px;
+              border-radius: 8px;
+              border-left: 4px solid #28a745;
+            "
+          >
+            <h4 style="color: #155724; margin-top: 0">
+              📎 Attachment Instructions:
+            </h4>
+            <ul style="color: #155724; margin-bottom: 0; text-align: left">
+              <li>
+                Look for the attached file: <br />
+                <strong>"event-checkin-qrcode.png"</strong>
+              </li>
+              <li>Save or print the QR code for easy access</li>
+              <li>Present this QR code when you arrive at the event</li>
+              <li>Keep this email as backup reference</li>
+            </ul>
+          </div>
+
+          <p style="font-size: 14px; color: #666; margin-top: 15px">
+            <strong>Note:</strong> If you cannot see the attachment, please
+            check your email client's attachment section or download area.
+          </p>
           <p>
             <small
               >Save this email to ensure you have access to your check-in QR
@@ -229,7 +254,6 @@
             >
           </p>
         </div>
-
         <div th:if="${buttonUrl != null}" style="text-align: center">
           <a class="button" th:href="${buttonUrl}" th:text="${buttonText}"
             >View Event Details</a
@@ -243,7 +267,6 @@
           </p>
         </div>
       </div>
-
       <div class="footer">
         <p>This is an automated message from the Event Management System.</p>
         <p>

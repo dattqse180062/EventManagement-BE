@@ -10,6 +10,5 @@ public class RegistrationCreateResponse {
     private String name;
     private String eventName;
     private RegistrationStatus status;
-    private String checkinUrl;
     private String createdAt;
 }

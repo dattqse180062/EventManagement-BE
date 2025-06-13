@@ -1,4 +1,4 @@
-package swd392.eventmanagement.service;
+package swd392.eventmanagement.service.registration;
 
 import swd392.eventmanagement.model.dto.request.RegistrationCreateRequest;
 import swd392.eventmanagement.model.dto.response.CheckinResponse;
@@ -14,4 +14,6 @@ public interface RegistrationService {
     RegistrationSearchResponse searchRegistration(Long eventId, String email);
 
     CheckinResponse checkin(Long eventId, String email);
+
+    CheckinResponse checkin(String checkinCode);
 }
