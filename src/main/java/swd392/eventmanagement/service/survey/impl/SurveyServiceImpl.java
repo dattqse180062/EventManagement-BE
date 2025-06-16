@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.enums.SurveyStatus;
 import swd392.eventmanagement.exception.AccessDeniedException;
 import swd392.eventmanagement.exception.EventNotFoundException;
@@ -42,25 +43,37 @@ public class SurveyServiceImpl implements SurveyService {
     private final EventRepository eventRepository;
 
 
+
     @Override
     public SurveyResponse createSurveyWithQuestions(SurveyCreateRequest request, String departmentCode) {
         logger.info("Creating new survey with title: {}", request.getTitle());
 
+        // Validate user's access to the department and the event
         surveyManageAccessValidator.validateUserDepartmentAccess(departmentCode);
-
         surveyManageAccessValidator.validateEventBelongsToUserDepartment(request.getEventId(), departmentCode);
 
         try {
-            // Check if the event exists
+            // Load event or throw if not found
             Event event = eventRepository.findById(request.getEventId())
-                    .orElseThrow(() -> new SurveyProcessingException("Event not found with id: " + request.getEventId()));
+                    .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + request.getEventId()));
 
-            // Check if the event already has a survey
+            // Reject if event is already completed
+            if (event.getStatus() == EventStatus.COMPLETED) {
+                throw new SurveyProcessingException("Cannot create survey for a completed event.");
+            }
+
+            // Ensure survey start time is within event time range
+            if (!(event.getStartTime().isBefore(request.getStartTime()) &&
+                    event.getEndTime().isAfter(request.getStartTime()))) {
+                throw new SurveyProcessingException("Survey start time must be after event start time and before event end time.");
+            }
+
+            // Reject if the event already has a survey assigned
             if (event.getSurvey() != null) {
                 throw new SurveyProcessingException("This event already has a survey assigned");
             }
 
-            // Check for duplicate survey title and time range
+            // Check for duplicate survey by title and time range
             boolean exists = surveyRepository.existsByTitleAndStartTimeAndEndTime(
                     request.getTitle(), request.getStartTime(), request.getEndTime());
 
@@ -68,7 +81,7 @@ public class SurveyServiceImpl implements SurveyService {
                 throw new SurveyProcessingException("Survey with the same title and time range already exists");
             }
 
-            // Constraint 1: check for duplicate question content
+            // Validate duplicate question content
             Set<String> uniqueQuestions = new HashSet<>();
             for (QuestionCreateRequest qReq : request.getQuestions()) {
                 String normalized = qReq.getQuestion().trim().toLowerCase();
@@ -77,7 +90,7 @@ public class SurveyServiceImpl implements SurveyService {
                 }
             }
 
-            // Constraint 2: check for duplicate order number
+            // Validate duplicate question order numbers
             Set<Integer> uniqueOrderNums = new HashSet<>();
             for (QuestionCreateRequest qReq : request.getQuestions()) {
                 if (!uniqueOrderNums.add(qReq.getOrderNum())) {
@@ -85,7 +98,7 @@ public class SurveyServiceImpl implements SurveyService {
                 }
             }
 
-            // Create Survey entity and set its properties
+            // Create and save the Survey
             Survey survey = new Survey();
             survey.setTitle(request.getTitle());
             survey.setDescription(request.getDescription());
@@ -95,7 +108,12 @@ public class SurveyServiceImpl implements SurveyService {
 
             Survey savedSurvey = surveyRepository.save(survey);
 
-            // Set the survey to the event and save event
+            // Ensure the createdAt timestamp of the survey is before the event end time
+            if (savedSurvey.getCreatedAt().isAfter(event.getEndTime())) {
+                throw new SurveyProcessingException("Survey creation time must be before event end time.");
+            }
+
+            // Link survey to the event and save
             event.setSurvey(savedSurvey);
             eventRepository.save(event);
 
@@ -124,6 +142,7 @@ public class SurveyServiceImpl implements SurveyService {
 
                 Question savedQuestion = questionRepository.save(question);
 
+                // Build question response DTO
                 QuestionResponse qResp = new QuestionResponse();
                 qResp.setId(savedQuestion.getId());
                 qResp.setQuestion(savedQuestion.getQuestion());
@@ -145,6 +164,7 @@ public class SurveyServiceImpl implements SurveyService {
                 questionResponses.add(qResp);
             }
 
+            // Build final survey response DTO
             SurveyResponse surveyResponse = new SurveyResponse();
             surveyResponse.setId(savedSurvey.getId());
             surveyResponse.setTitle(savedSurvey.getTitle());
@@ -164,19 +184,38 @@ public class SurveyServiceImpl implements SurveyService {
         }
     }
 
+
     @Transactional
     @Override
     public SurveyResponse updateSurveyWithQuestions(Long surveyId, SurveyUpdateRequest request, String departmentCode) {
         logger.info("Updating survey id: {}", surveyId);
 
         surveyManageAccessValidator.validateUserDepartmentAccess(departmentCode);
-
         surveyManageAccessValidator.validateEventBelongsToUserDepartment(request.getEventId(), departmentCode);
 
         Survey survey = surveyRepository.findById(surveyId)
                 .orElseThrow(() -> new SurveyNotFoundException("Survey with id " + surveyId + " not found"));
 
-        // Check for duplicate questions (case-insensitive)
+        Event event = eventRepository.findById(request.getEventId())
+                .orElseThrow(() -> new SurveyProcessingException("Event with id " + request.getEventId() + " not found"));
+
+        // Constraint: Event must not be completed
+        if (event.getStatus() == EventStatus.COMPLETED) {
+            throw new SurveyProcessingException("Cannot update survey for a completed event.");
+        }
+
+        // Constraint: Survey must be in DRAFT status
+        if (survey.getStatus() != SurveyStatus.DRAFT) {
+            throw new SurveyProcessingException("Only surveys in DRAFT status can be updated.");
+        }
+
+        // Constraint: event.endTime > startTime > event.startTime
+        if (!(event.getEndTime().isAfter(request.getStartTime()) &&
+                request.getStartTime().isAfter(event.getStartTime()))) {
+            throw new SurveyProcessingException("Survey start time must be after event start time and before event end time.");
+        }
+
+        // Validate duplicate question content
         Set<String> uniqueQuestions = new HashSet<>();
         for (QuestionRequest qReq : request.getQuestions()) {
             String normalizedQuestion = qReq.getQuestion().trim().toLowerCase();
@@ -185,7 +224,7 @@ public class SurveyServiceImpl implements SurveyService {
             }
         }
 
-        // Check for duplicate order numbers
+        // Validate duplicate order numbers
         Set<Integer> uniqueOrderNums = new HashSet<>();
         for (QuestionRequest qReq : request.getQuestions()) {
             if (!uniqueOrderNums.add(qReq.getOrderNum())) {
@@ -193,16 +232,14 @@ public class SurveyServiceImpl implements SurveyService {
             }
         }
 
-        // Update survey basic info
+        // Update survey metadata
         survey.setTitle(request.getTitle());
         survey.setDescription(request.getDescription());
         survey.setStartTime(request.getStartTime());
         survey.setEndTime(request.getEndTime());
-
-        // Save updated survey info
         survey = surveyRepository.save(survey);
 
-        // Map existing questions by their ID
+        // Prepare question updates
         Map<Long, Question> existingQuestionsMap = survey.getQuestions().stream()
                 .collect(Collectors.toMap(Question::getId, Function.identity()));
 
@@ -226,21 +263,19 @@ public class SurveyServiceImpl implements SurveyService {
             question.setType(qReq.getType());
             question.setIsRequired(qReq.getIsRequired());
 
-
-
             Map<Long, Option> existingOptionsMap = question.getOptions() != null
                     ? question.getOptions().stream().collect(Collectors.toMap(Option::getId, Function.identity()))
                     : new HashMap<>();
 
             List<Option> optionsToKeep = new ArrayList<>();
-
             if (qReq.getOptions() != null) {
                 for (OptionRequest oReq : qReq.getOptions()) {
                     Option option;
                     if (oReq.getId() != null) {
                         option = existingOptionsMap.remove(oReq.getId());
                         if (option == null) {
-                            throw new SurveyProcessingException("Option with id " + oReq.getId() + " not found in question " + question.getId());
+                            throw new SurveyProcessingException("Option with id " + oReq.getId() +
+                                    " not found in question " + question.getId());
                         }
                     } else {
                         option = new Option();
@@ -252,28 +287,25 @@ public class SurveyServiceImpl implements SurveyService {
                 }
             }
 
-            // Xóa các options còn lại trong existingOptionsMap khỏi collection question.getOptions()
             if (question.getOptions() == null) {
                 question.setOptions(new ArrayList<>());
             }
             question.getOptions().clear();
             question.getOptions().addAll(optionsToKeep);
 
-            // --- End xử lý options ---
-
             updatedQuestions.add(questionRepository.save(question));
         }
 
-        // Delete questions that no longer exist
+        // Remove questions that are no longer present
         for (Question q : existingQuestionsMap.values()) {
             questionRepository.delete(q);
         }
 
-        // Update the survey's question list
+        // Update survey's question list
         survey.setQuestions(updatedQuestions);
         survey = surveyRepository.save(survey);
 
-        // Convert to response DTO
+        // Build response DTO
         List<QuestionResponse> questionResponses = updatedQuestions.stream().map(q -> {
             QuestionResponse qResp = new QuestionResponse();
             qResp.setId(q.getId());
@@ -309,6 +341,9 @@ public class SurveyServiceImpl implements SurveyService {
 
         return surveyResponse;
     }
+
+
+
 
     @Override
     public SurveyResponse viewSurveyDetailByEventIdAndDraftStatus(Long eventId) {
@@ -394,16 +429,18 @@ public class SurveyServiceImpl implements SurveyService {
                 eventRepository.save(event);
             });
 
-            // 5. Delete the survey (cascade will delete questions and options)
-            surveyRepository.delete(survey);
-            logger.info("Removed survey (and related questions/options) with id: {}", surveyId);
+            // 5. Update survey status to CLOSED instead of deleting it
+            survey.setStatus(SurveyStatus.CLOSED);
+            surveyRepository.save(survey);
+
+            logger.info("Survey with id {} marked as CLOSED and unlinked from event {}", surveyId, eventId);
 
         } catch (AccessDeniedException ex) {
             throw ex;
         } catch (SurveyNotFoundException | EventNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            logger.error("Failed to remove survey with id: {}", surveyId, ex);
+            logger.error("Failed to mark survey as CLOSED with id: {}", surveyId, ex);
             throw new SurveyProcessingException("Failed to remove survey with id: " + surveyId, ex);
         }
     }

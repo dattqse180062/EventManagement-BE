@@ -357,11 +357,11 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(SurveyProcessingException.class)
         public ResponseEntity<ErrorResponse> handleSurveyProcessingException(SurveyProcessingException ex, WebRequest request) {
                 ErrorResponse errorResponse = new ErrorResponse(
-                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        HttpStatus.BAD_REQUEST.value(),
                         LocalDateTime.now(),
                         ex.getMessage(),
                         request.getDescription(false));
-                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
 
         //DepartmentRoleProcessingException
