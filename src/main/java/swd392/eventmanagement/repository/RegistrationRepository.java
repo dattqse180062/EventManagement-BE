@@ -43,4 +43,7 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 
     @Query(value = "SELECT COUNT(DISTINCT user_id) FROM registrations WHERE attended = true", nativeQuery = true)
     long countAttendees();
+
+
+    List<Registration> findByEventId(Long eventId);
 }

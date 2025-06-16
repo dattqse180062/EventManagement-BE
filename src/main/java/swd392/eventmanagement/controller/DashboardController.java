@@ -12,8 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.response.DashboardStats;
+import swd392.eventmanagement.model.dto.response.EventDashBoardResponse;
 import swd392.eventmanagement.model.dto.response.MonthlyEventCount;
-import swd392.eventmanagement.service.DashboardService;
+import swd392.eventmanagement.service.dashboard.DashboardService;
 
 import java.util.List;
 import java.util.Map;
@@ -79,5 +80,36 @@ public class DashboardController {
         }
         return ResponseEntity.ok(distribution);
     }
+
+    @GetMapping("/{eventId}/dashboard")
+    @Operation(
+            summary = "Get event dashboard statistics",
+            description = "Returns dashboard statistics for a specific event, including registration, attendance, and survey response data.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Dashboard data successfully returned",
+            content = @Content(schema = @Schema(implementation = EventDashBoardResponse.class))
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden - user does not have access rights"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Event not found"
+    )
+    public ResponseEntity<EventDashBoardResponse> getEventDashboard(
+            @PathVariable Long eventId,
+            @RequestParam String departmentCode
+    ) {
+        EventDashBoardResponse response = dashboardService.getEventDashboard(eventId, departmentCode);
+        return ResponseEntity.ok(response);
+    }
+
+
+
+
 
 }
