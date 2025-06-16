@@ -2,6 +2,7 @@ package swd392.eventmanagement.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import swd392.eventmanagement.model.entity.Answer;
 import swd392.eventmanagement.model.entity.Option;
 import swd392.eventmanagement.model.entity.Question;
@@ -27,4 +28,15 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     @Query("SELECT COUNT(a) FROM Answer a WHERE a.question = ?1 AND a.option = ?2")
     Long countByQuestionAndOption(Question question, Option option);
+
+
+    int countByQuestionId(Long questionId);
+
+
+    int countByOptionId(Long optionId);
+
+
+
+    @Query("SELECT COUNT(a) FROM Answer a WHERE a.question.id = :questionId AND a.answerText IS NOT NULL AND a.answerText <> ''")
+    int countNonEmptyTextAnswers(@Param("questionId") Long questionId);
 }
