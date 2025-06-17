@@ -346,25 +346,19 @@ public class SurveyServiceImpl implements SurveyService {
 
 
     @Override
-    public SurveyResponse viewSurveyDetailByEventIdAndDraftStatus(Long eventId) {
+    public SurveyResponse viewSurveyDetailByEventId(Long eventId) {
         logger.info("Viewing survey detail for event ID: {}", eventId);
 
         try {
-
             Event event = eventRepository.findById(eventId)
                     .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
-
 
             Survey survey = event.getSurvey();
             if (survey == null) {
                 throw new SurveyNotFoundException("Survey not found for event with id: " + eventId);
             }
 
-
-            if (survey.getStatus() != SurveyStatus.DRAFT) {
-                throw new AccessDeniedException("Survey for event with id " + eventId + " is not public.");
-            }
-
+            logger.info("Survey status for event {}: {}", eventId, survey.getStatus());
 
             List<QuestionResponse> questionResponses = survey.getQuestions().stream().map(question -> {
                 QuestionResponse questionResponse = new QuestionResponse();
@@ -387,7 +381,6 @@ public class SurveyServiceImpl implements SurveyService {
                 questionResponse.setOptions(optionResponses);
                 return questionResponse;
             }).collect(Collectors.toList());
-
 
             SurveyResponse surveyResponse = new SurveyResponse();
             surveyResponse.setId(survey.getId());
@@ -423,6 +416,11 @@ public class SurveyServiceImpl implements SurveyService {
             Survey survey = surveyRepository.findById(surveyId)
                     .orElseThrow(() -> new SurveyNotFoundException("Survey not found with id: " + surveyId));
 
+            // 3.1 Check if survey is in DRAFT status
+            if (survey.getStatus() != SurveyStatus.DRAFT) {
+                throw new IllegalStateException("Only surveys in DRAFT status can be removed");
+            }
+
             // 4. Unlink the survey from the event (if exists)
             eventRepository.findById(eventId).ifPresent(event -> {
                 event.setSurvey(null);
@@ -435,9 +433,7 @@ public class SurveyServiceImpl implements SurveyService {
 
             logger.info("Survey with id {} marked as CLOSED and unlinked from event {}", surveyId, eventId);
 
-        } catch (AccessDeniedException ex) {
-            throw ex;
-        } catch (SurveyNotFoundException | EventNotFoundException ex) {
+        } catch (AccessDeniedException | SurveyNotFoundException | EventNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
             logger.error("Failed to mark survey as CLOSED with id: {}", surveyId, ex);

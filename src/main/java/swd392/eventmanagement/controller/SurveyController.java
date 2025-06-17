@@ -73,18 +73,17 @@ public class SurveyController {
     }
 
     @Operation(
-            summary = "View draft survey by event ID",
-            description = "Retrieve a survey in DRAFT status along with its questions and options by event ID"
+            summary = "View  survey by event ID",
+            description = "Retrieve a survey  along with its questions and options by event ID"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Draft survey retrieved successfully"),
-            @ApiResponse(responseCode = "403", description = "Survey is not in DRAFT status"),
             @ApiResponse(responseCode = "404", description = "Event or Survey not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    @GetMapping("/events/{eventId}/survey/draft")
+    @GetMapping("/events/{eventId}/survey")
     public ResponseEntity<SurveyResponse> getDraftSurveyByEvent(@PathVariable Long eventId) {
-        SurveyResponse surveyResponse = surveyService.viewSurveyDetailByEventIdAndDraftStatus(eventId);
+        SurveyResponse surveyResponse = surveyService.viewSurveyDetailByEventId(eventId);
         return ResponseEntity.ok(surveyResponse);
     }
 

@@ -13,5 +13,5 @@ public interface SurveyService {
 
     void removeSurvey(Long surveyId, Long eventId, String departmentCode);
 
-    public SurveyResponse viewSurveyDetailByEventIdAndDraftStatus(Long eventId);
+    public SurveyResponse viewSurveyDetailByEventId(Long eventId);
 }
