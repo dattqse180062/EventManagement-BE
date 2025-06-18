@@ -16,6 +16,7 @@ import swd392.eventmanagement.model.dto.request.*;
 import swd392.eventmanagement.model.dto.response.OptionResponse;
 import swd392.eventmanagement.model.dto.response.QuestionResponse;
 import swd392.eventmanagement.model.dto.response.SurveyResponse;
+import swd392.eventmanagement.model.dto.response.SurveyUserResponse;
 import swd392.eventmanagement.model.entity.*;
 import swd392.eventmanagement.repository.*;
 import swd392.eventmanagement.security.service.UserDetailsImpl;
@@ -530,6 +531,17 @@ public class SurveyServiceImpl implements SurveyService {
             Map<Long, Question> questionMap = survey.getQuestions().stream()
                     .collect(Collectors.toMap(Question::getId, q -> q));
 
+            // 5.1 Validate required questions are answered
+            Set<Long> answeredQuestionIds = request.getAnswers().stream()
+                    .map(QuestionAnswerRequest::getQuestionId)
+                    .collect(Collectors.toSet());
+
+            for (Question question : survey.getQuestions()) {
+                if (Boolean.TRUE.equals(question.getIsRequired()) && !answeredQuestionIds.contains(question.getId())) {
+                    throw new InvalidAnswerException("Missing answer for required question ID: " + question.getId());
+                }
+            }
+
             // 6. Iterate over each submitted answer
             for (QuestionAnswerRequest answerRequest : request.getAnswers()) {
                 Question question = questionMap.get(answerRequest.getQuestionId());
@@ -538,8 +550,7 @@ public class SurveyServiceImpl implements SurveyService {
                 }
 
                 switch (question.getType()) {
-                    case TEXT:
-                     {
+                    case TEXT: {
                         if (answerRequest.getAnswerText() == null || answerRequest.getAnswerText().isBlank()) {
                             throw new InvalidAnswerException("Answer text is required for question ID: " + question.getId());
                         }
@@ -614,7 +625,187 @@ public class SurveyServiceImpl implements SurveyService {
             logger.error("Error during survey submission for survey ID: {}", request.getSurveyId(), ex);
             throw ex;
         }
+    }
+
+    @Override
+    public SurveyUserResponse getUserSurveyResponseByResponseId(Long responseId) {
+        logger.info("Fetching survey response by response ID: {}", responseId);
+
+        try {
+            // 1. Get authenticated user ID
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+            Long userId = userDetails.getId();
+
+            // 2. Fetch response from DB
+            Response response = responseRepository.findById(responseId)
+                    .orElseThrow(() -> new SurveyProcessingException("Response not found with ID: " + responseId));
+
+            // 3. Validate that the current user owns this response
+            Registration registration = response.getRegistration();
+            User responseOwner = registration.getUser();
+
+            if (responseOwner == null || !Objects.equals(responseOwner.getId(), userId)) {
+                logger.warn("Access denied. Current userId: {}, response owned by: {}", userId,
+                        responseOwner != null ? responseOwner.getId() : null);
+                throw new AccessDeniedException("You do not have permission to view this response.");
+            }
+
+            // 4. Get associated survey
+            Survey survey = response.getSurvey();
+
+            // 5. Fetch all answers tied to the response
+            List<Answer> answers = answerRepository.findByResponse(response);
+
+            // 6. Map answers to DTO
+            List<QuestionAnswerRequest> mappedAnswers = new ArrayList<>();
+            for (Answer ans : answers) {
+                QuestionAnswerRequest q = new QuestionAnswerRequest();
+                q.setQuestionId(ans.getQuestion().getId());
+
+                if (ans.getAnswerText() != null) {
+                    q.setAnswerText(ans.getAnswerText());
+                } else if (ans.getOption() != null) {
+                    q.setSelectedOptions(List.of(new OptionAnswerRequest(ans.getOption().getId())));
+                }
+
+                mappedAnswers.add(q);
+            }
+
+            // 7. Wrap into response DTO
+            SurveyUserResponse dto = new SurveyUserResponse();
+            dto.setSurveyId(survey.getId());
+            dto.setAnswers(mappedAnswers);
+
+            logger.info("Successfully fetched response ID: {} for user ID: {}", responseId, userId);
+            return dto;
+
+        } catch (Exception ex) {
+            logger.error("Failed to retrieve survey response by response ID: {}", responseId, ex);
+            throw new SurveyProcessingException("Failed to load survey response by ID.", ex);
+        }
+    }
 
 
-}
+    @Override
+    @Transactional
+    public void updateSurveyResponseByResponseId(Long responseId, SurveySubmissionRequest request) {
+        logger.info("Updating survey response ID: {}", responseId);
+
+        try {
+            // 1. Get authenticated user ID
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+            Long userId = userDetails.getId();
+
+            // 2. Fetch existing response
+            Response response = responseRepository.findById(responseId)
+                    .orElseThrow(() -> new SurveyProcessingException("Response not found with ID: " + responseId));
+
+            // 3. Validate ownership
+            Registration registration = response.getRegistration();
+            if (!Objects.equals(registration.getUser().getId(), userId)) {
+                logger.warn("Access denied for user {} to update response ID {}", userId, responseId);
+                throw new AccessDeniedException("You do not have permission to update this response.");
+            }
+
+            Survey survey = response.getSurvey();
+            Map<Long, Question> questionMap = survey.getQuestions().stream()
+                    .collect(Collectors.toMap(Question::getId, q -> q));
+
+            // 4. Iterate over submitted answers
+            for (QuestionAnswerRequest answerRequest : request.getAnswers()) {
+                Question question = questionMap.get(answerRequest.getQuestionId());
+                if (question == null) {
+                    throw new QuestionNotFoundException("Question not found with ID: " + answerRequest.getQuestionId());
+                }
+
+                switch (question.getType()) {
+
+                    case TEXT: {
+                        if (answerRequest.getAnswerText() == null || answerRequest.getAnswerText().isBlank()) {
+                            throw new InvalidAnswerException("Answer text is required for question ID: " + question.getId());
+                        }
+
+                        Answer answer = answerRepository.findByResponseAndQuestion(response, question)
+                                .orElse(new Answer());
+
+                        answer.setQuestion(question);
+                        answer.setResponse(response);
+                        answer.setAnswerText(answerRequest.getAnswerText());
+                        answer.setOption(null);
+                        answerRepository.save(answer);
+                        break;
+                    }
+
+                    case RATING:
+                    case RADIO:
+                    case DROPDOWN: {
+                        List<OptionAnswerRequest> selected = answerRequest.getSelectedOptions();
+                        if (selected == null || selected.size() != 1) {
+                            throw new InvalidAnswerException("Exactly one option must be selected for question ID: " + question.getId());
+                        }
+
+                        Long optionId = selected.get(0).getOptionId();
+                        Option option = optionRepository.findById(optionId)
+                                .orElseThrow(() -> new InvalidAnswerException("Invalid option ID: " + optionId));
+
+                        if (!question.getOptions().contains(option)) {
+                            throw new InvalidAnswerException("Option ID " + optionId + " does not belong to question ID: " + question.getId());
+                        }
+
+                        Answer answer = answerRepository.findByResponseAndQuestion(response, question)
+                                .orElse(new Answer());
+
+                        answer.setQuestion(question);
+                        answer.setResponse(response);
+                        answer.setOption(option);
+                        answer.setAnswerText(null);
+                        answerRepository.save(answer);
+                        break;
+                    }
+
+                    case CHECKBOX: {
+                        List<OptionAnswerRequest> selected = answerRequest.getSelectedOptions();
+                        if (selected == null || selected.isEmpty()) {
+                            throw new InvalidAnswerException("At least one option must be selected for question ID: " + question.getId());
+                        }
+
+                        // Delete all previous checkbox answers for this question
+                        List<Answer> existingAnswers = answerRepository.findAllByResponseAndQuestion(response, question);
+                        answerRepository.deleteAll(existingAnswers);
+
+                        for (OptionAnswerRequest optReq : selected) {
+                            Long optionId = optReq.getOptionId();
+                            Option option = optionRepository.findById(optionId)
+                                    .orElseThrow(() -> new InvalidAnswerException("Invalid option ID: " + optionId));
+
+                            if (!question.getOptions().contains(option)) {
+                                throw new InvalidAnswerException("Option ID " + optionId + " does not belong to question ID: " + question.getId());
+                            }
+
+                            Answer answer = new Answer();
+                            answer.setQuestion(question);
+                            answer.setOption(option);
+                            answer.setResponse(response);
+                            answerRepository.save(answer);
+                        }
+                        break;
+                    }
+
+                    default:
+                        throw new InvalidAnswerException("Unsupported question type: " + question.getType());
+                }
+            }
+
+            logger.info("Successfully updated survey response ID: {} by user ID: {}", responseId, userId);
+
+        } catch (Exception ex) {
+            logger.error("Failed to update survey response ID: {} - {}", responseId, ex.getMessage(), ex);
+            throw new SurveyProcessingException("Failed to update survey response.", ex);
+        }
+    }
+
+
+
 }

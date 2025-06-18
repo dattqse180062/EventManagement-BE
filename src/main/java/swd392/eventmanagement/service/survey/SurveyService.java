@@ -4,6 +4,7 @@ import swd392.eventmanagement.model.dto.request.SurveyCreateRequest;
 import swd392.eventmanagement.model.dto.request.SurveySubmissionRequest;
 import swd392.eventmanagement.model.dto.request.SurveyUpdateRequest;
 import swd392.eventmanagement.model.dto.response.SurveyResponse;
+import swd392.eventmanagement.model.dto.response.SurveyUserResponse;
 
 public interface SurveyService {
     SurveyResponse createSurveyWithQuestions(SurveyCreateRequest request, String departmentCode);
@@ -17,4 +18,8 @@ public interface SurveyService {
     public SurveyResponse viewSurveyDetailByEventId(Long eventId);
 
     void submitSurveyAnswerBySurveyId(SurveySubmissionRequest request);
+
+    SurveyUserResponse getUserSurveyResponseByResponseId(Long responseId);
+
+    void updateSurveyResponseByResponseId(Long responseId, SurveySubmissionRequest request);
 }

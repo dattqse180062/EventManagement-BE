@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 public class SurveySubmissionRequest {
-    private Long surveyId;
-    private Long registrationId; // optional
+  private Long surveyId;
+   private Long registrationId; // optional
     private List<QuestionAnswerRequest> answers;
 }
