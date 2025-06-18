@@ -375,6 +375,17 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+        @ExceptionHandler(InvalidAnswerException.class)
+        public ResponseEntity<ErrorResponse> handleInvalidAnswerException(InvalidAnswerException ex, WebRequest request) {
+                ErrorResponse errorResponse = new ErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),                // HTTP 400
+                        LocalDateTime.now(),
+                        ex.getMessage(),
+                        request.getDescription(false)
+                );
+                return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+
 
         // Error response class
         @Data

@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.SurveyCreateRequest;
+import swd392.eventmanagement.model.dto.request.SurveySubmissionRequest;
 import swd392.eventmanagement.model.dto.request.SurveyUpdateRequest;
 import swd392.eventmanagement.model.dto.response.SurveyResponse;
 import swd392.eventmanagement.service.survey.impl.SurveyServiceImpl;
@@ -127,6 +128,23 @@ public class SurveyController {
     ) {
         surveyService.removeSurvey(surveyId, eventId, departmentCode);
         return ResponseEntity.ok("Survey deleted successfully");
+    }
+
+    @Operation(
+            summary = "Submit answers for a survey",
+            description = "Submits answers to a survey using the survey ID. Supports text, radio, checkbox, dropdown, and rating question types."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Submission successful"),
+            @ApiResponse(responseCode = "404", description = "Survey or question not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or unsupported question type"),
+            @ApiResponse(responseCode = "403", description = "Survey is not open for submission"),
+            @ApiResponse(responseCode = "500", description = "Internal server error during submission")
+    })
+    @PostMapping("/submit")
+    public ResponseEntity<String> submitSurveyAnswers(@RequestBody SurveySubmissionRequest request) {
+        surveyService.submitSurveyAnswerBySurveyId(request);
+        return ResponseEntity.ok("Survey answers submitted successfully.");
     }
 
 

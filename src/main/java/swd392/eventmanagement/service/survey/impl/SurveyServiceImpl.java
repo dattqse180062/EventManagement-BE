@@ -3,27 +3,22 @@ package swd392.eventmanagement.service.survey.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import swd392.eventmanagement.enums.EventStatus;
 import swd392.eventmanagement.enums.SurveyStatus;
-import swd392.eventmanagement.exception.AccessDeniedException;
-import swd392.eventmanagement.exception.EventNotFoundException;
-import swd392.eventmanagement.exception.SurveyNotFoundException;
-import swd392.eventmanagement.exception.SurveyProcessingException;
+import swd392.eventmanagement.exception.*;
+import swd392.eventmanagement.exception.InvalidAnswerException;
 import swd392.eventmanagement.model.dto.request.*;
 import swd392.eventmanagement.model.dto.response.OptionResponse;
 import swd392.eventmanagement.model.dto.response.QuestionResponse;
 import swd392.eventmanagement.model.dto.response.SurveyResponse;
-import swd392.eventmanagement.model.entity.Event;
-import swd392.eventmanagement.model.entity.Option;
-import swd392.eventmanagement.model.entity.Question;
-import swd392.eventmanagement.model.entity.Survey;
-import swd392.eventmanagement.repository.EventRepository;
-import swd392.eventmanagement.repository.OptionRepository;
-import swd392.eventmanagement.repository.QuestionRepository;
-import swd392.eventmanagement.repository.SurveyRepository;
+import swd392.eventmanagement.model.entity.*;
+import swd392.eventmanagement.repository.*;
+import swd392.eventmanagement.security.service.UserDetailsImpl;
 import swd392.eventmanagement.service.survey.SurveyService;
 import swd392.eventmanagement.service.survey.validator.SurveyManageAccessValidator;
 
@@ -41,7 +36,9 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveyManageAccessValidator surveyManageAccessValidator;
     private final OptionRepository optionRepository;
     private final EventRepository eventRepository;
-
+    private final AnswerRepository answerRepository;
+    private final ResponseRepository responseRepository;
+    private final RegistrationRepository registrationRepository;
 
 
     @Override
@@ -343,8 +340,6 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
 
-
-
     @Override
     public SurveyResponse viewSurveyDetailByEventId(Long eventId) {
         logger.info("Viewing survey detail for event ID: {}", eventId);
@@ -402,6 +397,7 @@ public class SurveyServiceImpl implements SurveyService {
             throw new SurveyProcessingException("Failed to view survey detail for event id: " + eventId, ex);
         }
     }
+
 
     @Override
     public void removeSurvey(Long surveyId, Long eventId, String departmentCode) {
@@ -506,4 +502,119 @@ public class SurveyServiceImpl implements SurveyService {
         }
     }
 
+    @Transactional
+    public void submitSurveyAnswerBySurveyId(SurveySubmissionRequest request) {
+        logger.info("Submitting answers for survey ID: {}", request.getSurveyId());
+
+        try {
+            // 1. Get the currently authenticated user's ID
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+            Long userId = userDetails.getId();
+
+            // 2. Validate user access and retrieve the corresponding Registration entity
+            Registration registration = surveyManageAccessValidator
+                    .validateSurveySubmissionAccess(request.getSurveyId(), userId);
+
+            // 3. Get the survey and event from the registration
+            Event event = registration.getEvent();
+            Survey survey = event.getSurvey();
+
+            // 4. Create a Response entity to represent this submission
+            Response response = new Response();
+            response.setSurvey(survey);
+            response.setRegistration(registration);
+            responseRepository.save(response);
+
+            // 5. Build a map of question ID to Question for quick lookup
+            Map<Long, Question> questionMap = survey.getQuestions().stream()
+                    .collect(Collectors.toMap(Question::getId, q -> q));
+
+            // 6. Iterate over each submitted answer
+            for (QuestionAnswerRequest answerRequest : request.getAnswers()) {
+                Question question = questionMap.get(answerRequest.getQuestionId());
+                if (question == null) {
+                    throw new QuestionNotFoundException("Question not found with ID: " + answerRequest.getQuestionId());
+                }
+
+                switch (question.getType()) {
+                    case TEXT:
+                     {
+                        if (answerRequest.getAnswerText() == null || answerRequest.getAnswerText().isBlank()) {
+                            throw new InvalidAnswerException("Answer text is required for question ID: " + question.getId());
+                        }
+                        Answer answer = new Answer();
+                        answer.setQuestion(question);
+                        answer.setResponse(response);
+                        answer.setAnswerText(answerRequest.getAnswerText());
+                        answerRepository.save(answer);
+                        break;
+                    }
+
+                    case RATING:
+                    case RADIO:
+                    case DROPDOWN: {
+                        List<OptionAnswerRequest> selected = answerRequest.getSelectedOptions();
+                        if (selected == null || selected.size() != 1) {
+                            throw new InvalidAnswerException("Exactly one option must be selected for question ID: " + question.getId());
+                        }
+
+                        Long optionId = selected.get(0).getOptionId();
+                        Option option = optionRepository.findById(optionId)
+                                .orElseThrow(() -> new InvalidAnswerException("Invalid option ID: " + optionId));
+
+                        if (!question.getOptions().contains(option)) {
+                            throw new InvalidAnswerException("Option ID " + optionId + " does not belong to question ID: " + question.getId());
+                        }
+
+                        Answer answer = new Answer();
+                        answer.setQuestion(question);
+                        answer.setOption(option);
+                        answer.setResponse(response);
+                        answerRepository.save(answer);
+                        break;
+                    }
+
+                    case CHECKBOX: {
+                        List<OptionAnswerRequest> selected = answerRequest.getSelectedOptions();
+                        if (selected == null || selected.isEmpty()) {
+                            throw new InvalidAnswerException("At least one option must be selected for question ID: " + question.getId());
+                        }
+
+                        for (OptionAnswerRequest optReq : selected) {
+                            Long optionId = optReq.getOptionId();
+                            Option option = optionRepository.findById(optionId)
+                                    .orElseThrow(() -> new InvalidAnswerException("Invalid option ID: " + optionId));
+
+                            if (!question.getOptions().contains(option)) {
+                                throw new InvalidAnswerException("Option ID " + optionId + " does not belong to question ID: " + question.getId());
+                            }
+
+                            Answer answer = new Answer();
+                            answer.setQuestion(question);
+                            answer.setOption(option);
+                            answer.setResponse(response);
+                            answerRepository.save(answer);
+                        }
+                        break;
+                    }
+
+                    default:
+                        throw new InvalidAnswerException("Unsupported question type: " + question.getType());
+                }
+            }
+
+            // 7. Mark that the user has completed the survey
+            registration.setSurveyDone(true);
+            registrationRepository.save(registration);
+
+            logger.info("Survey answers submitted successfully for user {} and survey {}", userId, survey.getId());
+
+        } catch (Exception ex) {
+            logger.error("Error during survey submission for survey ID: {}", request.getSurveyId(), ex);
+            throw ex;
+        }
+
+
+}
 }
