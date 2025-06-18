@@ -17,6 +17,7 @@ import swd392.eventmanagement.model.dto.request.SurveyCreateRequest;
 import swd392.eventmanagement.model.dto.request.SurveySubmissionRequest;
 import swd392.eventmanagement.model.dto.request.SurveyUpdateRequest;
 import swd392.eventmanagement.model.dto.response.SurveyResponse;
+import swd392.eventmanagement.model.dto.response.SurveyUserResponse;
 import swd392.eventmanagement.service.survey.impl.SurveyServiceImpl;
 
 @RestController
@@ -145,6 +146,45 @@ public class SurveyController {
     public ResponseEntity<String> submitSurveyAnswers(@RequestBody SurveySubmissionRequest request) {
         surveyService.submitSurveyAnswerBySurveyId(request);
         return ResponseEntity.ok("Survey answers submitted successfully.");
+    }
+
+    @Operation(
+            summary = "Get user's survey response by response ID",
+            description = "Retrieves the current logged-in user's submitted answers for a specific response ID. " +
+                    "Only the user who submitted the response can view it."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Survey response retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied: response does not belong to current user"),
+            @ApiResponse(responseCode = "404", description = "Response not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error while retrieving the response")
+    })
+    @GetMapping("/{responseId}/response")
+    public ResponseEntity<SurveyUserResponse> getUserSurveyResponse(@PathVariable Long responseId) {
+        SurveyUserResponse response = surveyService.getUserSurveyResponseByResponseId(responseId);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @Operation(
+            summary = "Update user's survey response",
+            description = "Updates the existing submitted survey answers based on response ID. " +
+                    "Only the original respondent can modify their submission. " +
+                    "Supports question types: TEXT, RADIO, CHECKBOX, DROPDOWN, and RATING."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Survey response updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or unsupported question type"),
+            @ApiResponse(responseCode = "403", description = "Access denied – user does not own this response"),
+            @ApiResponse(responseCode = "404", description = "Response or related question/option not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error during update process")
+    })
+    @PutMapping("/{responseId}/update")
+    public ResponseEntity<String> updateSurveyResponse(
+            @PathVariable Long responseId,
+            @RequestBody SurveySubmissionRequest request) {
+        surveyService.updateSurveyResponseByResponseId(responseId, request);
+        return ResponseEntity.ok("Survey response updated successfully.");
     }
 
 

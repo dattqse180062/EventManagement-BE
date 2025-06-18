@@ -39,4 +39,11 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     @Query("SELECT COUNT(a) FROM Answer a WHERE a.question.id = :questionId AND a.answerText IS NOT NULL AND a.answerText <> ''")
     int countNonEmptyTextAnswers(@Param("questionId") Long questionId);
+
+
+    List<Answer> findAllByResponseAndQuestion(Response response, Question question);
+
+
+
+
 }
