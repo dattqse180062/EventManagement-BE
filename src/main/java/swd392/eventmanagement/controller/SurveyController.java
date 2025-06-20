@@ -17,8 +17,11 @@ import swd392.eventmanagement.model.dto.request.SurveyCreateRequest;
 import swd392.eventmanagement.model.dto.request.SurveySubmissionRequest;
 import swd392.eventmanagement.model.dto.request.SurveyUpdateRequest;
 import swd392.eventmanagement.model.dto.response.SurveyResponse;
+import swd392.eventmanagement.model.dto.response.SurveyResponseDetail;
 import swd392.eventmanagement.model.dto.response.SurveyUserResponse;
 import swd392.eventmanagement.service.survey.impl.SurveyServiceImpl;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/surveys")
@@ -185,6 +188,40 @@ public class SurveyController {
             @RequestBody SurveySubmissionRequest request) {
         surveyService.updateSurveyResponseByResponseId(responseId, request);
         return ResponseEntity.ok("Survey response updated successfully.");
+    }
+
+    @Operation(
+            summary = "Get detailed survey responses",
+            description = "Returns all individual responses for a given survey ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Responses fetched successfully"),
+            @ApiResponse(responseCode = "404", description = "Survey not found"),
+            @ApiResponse(responseCode = "500", description = "Internal error")
+    })
+    @GetMapping("/{surveyId}/responses")
+    public ResponseEntity<List<SurveyResponseDetail>> getSurveyResponses(@PathVariable Long surveyId,@RequestParam("departmentCode") String departmentCode) {
+        List<SurveyResponseDetail> responses = surveyService.getSurveyResponsesByDepartmentAndSurvey(surveyId,departmentCode);
+        return ResponseEntity.ok(responses);
+    }
+
+    @Operation(
+            summary = "Export survey responses to CSV",
+            description = "Exports all survey responses (per participant) for a given survey ID and department code. " +
+                    "Each row in the CSV corresponds to a user's submitted answers."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "CSV exported successfully",
+                    content = @Content(mediaType = "text/csv")),
+            @ApiResponse(responseCode = "403", description = "Access denied or invalid department code"),
+            @ApiResponse(responseCode = "404", description = "Survey not found"),
+            @ApiResponse(responseCode = "500", description = "Internal error while exporting CSV")
+    })
+    @GetMapping("/{surveyId}/responses/export")
+    public ResponseEntity<byte[]> exportSurveyResponsesAsCSV(
+            @PathVariable Long surveyId,
+            @RequestParam String departmentCode) {
+        return surveyService.exportSurveyResponsesToCSV(surveyId, departmentCode);
     }
 
 
