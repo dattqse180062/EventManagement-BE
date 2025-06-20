@@ -1,8 +1,12 @@
 package swd392.eventmanagement.service.survey.impl;
 
 
+import com.opencsv.CSVWriter;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +17,14 @@ import swd392.eventmanagement.enums.SurveyStatus;
 import swd392.eventmanagement.exception.*;
 import swd392.eventmanagement.exception.InvalidAnswerException;
 import swd392.eventmanagement.model.dto.request.*;
-import swd392.eventmanagement.model.dto.response.OptionResponse;
-import swd392.eventmanagement.model.dto.response.QuestionResponse;
-import swd392.eventmanagement.model.dto.response.SurveyResponse;
-import swd392.eventmanagement.model.dto.response.SurveyUserResponse;
+import swd392.eventmanagement.model.dto.response.*;
 import swd392.eventmanagement.model.entity.*;
 import swd392.eventmanagement.repository.*;
 import swd392.eventmanagement.security.service.UserDetailsImpl;
 import swd392.eventmanagement.service.survey.SurveyService;
 import swd392.eventmanagement.service.survey.validator.SurveyManageAccessValidator;
 
+import java.io.StringWriter;
 import java.util.*;
 
 import java.util.function.Function;
@@ -807,5 +809,117 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
 
+    @Override
+    public List<SurveyResponseDetail> getSurveyResponsesByDepartmentAndSurvey(Long surveyId, String departmentCode) {
+        logger.info("Fetching all survey responses for survey ID: {}", surveyId);
+
+        surveyManageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+        try {
+            // 1. Fetch survey
+            Survey survey = surveyRepository.findById(surveyId)
+                    .orElseThrow(() -> new SurveyProcessingException("Survey not found with ID: " + surveyId));
+
+            // 2. Fetch all responses tied to this survey
+            List<Response> responses = responseRepository.findBySurvey(survey);
+
+            // 3. Fetch all questions once
+            List<Question> questions = questionRepository.findBySurveyId(surveyId);
+            Map<Long, String> questionTextMap = questions.stream()
+                    .collect(Collectors.toMap(Question::getId, Question::getQuestion));
+
+            // 4. Build result list
+            List<SurveyResponseDetail> result = new ArrayList<>();
+            for (Response resp : responses) {
+                SurveyResponseDetail detail = new SurveyResponseDetail();
+                detail.setResponseId(resp.getId());
+
+                Registration reg = resp.getRegistration();
+                User user = reg.getUser();
+                detail.setUserName(user.getFullName());
+                detail.setSubmittedAt(resp.getCreatedAt());
+
+                List<Answer> answers = answerRepository.findByResponse(resp);
+                Map<String, String> mappedAnswers = new LinkedHashMap<>();
+
+                for (Answer answer : answers) {
+                    String questionText = questionTextMap.get(answer.getQuestion().getId());
+                    String value = (answer.getAnswerText() != null)
+                            ? answer.getAnswerText()
+                            : (answer.getOption() != null ? answer.getOption().getText() : ""); // fallback
+                    mappedAnswers.put(questionText, value);
+                }
+
+                detail.setAnswers(mappedAnswers);
+                result.add(detail);
+            }
+
+            logger.info("Successfully fetched {} survey responses for survey ID: {}", result.size(), surveyId);
+            return result;
+
+        } catch (Exception ex) {
+            logger.error("Error while fetching survey details for survey ID: {}", surveyId, ex);
+            throw new SurveyProcessingException("Failed to load survey responses", ex);
+        }
+    }
+
+
+    @Override
+    public ResponseEntity<byte[]> exportSurveyResponsesToCSV(Long surveyId, String departmentCode) {
+        logger.info("Exporting survey responses to CSV for survey ID: {} and department code: {}", surveyId, departmentCode);
+
+        // 1. Validate access
+        surveyManageAccessValidator.validateUserDepartmentAccess(departmentCode);
+
+        // 2. Fetch responses
+        List<SurveyResponseDetail> responses = getSurveyResponsesByDepartmentAndSurvey(surveyId, departmentCode);
+        logger.debug("Fetched {} survey responses for export", responses.size());
+
+        try (StringWriter sw = new StringWriter();
+             CSVWriter writer = new CSVWriter(sw)) {
+
+            // 3. Extract dynamic question headers
+            Set<String> questionHeaders = new LinkedHashSet<>();
+            for (SurveyResponseDetail detail : responses) {
+                questionHeaders.addAll(detail.getAnswers().keySet());
+            }
+            logger.debug("Dynamic question headers extracted: {}", questionHeaders);
+
+            // 4. Write CSV headers
+            List<String> header = new ArrayList<>();
+            header.add("Response ID");
+            header.add("User Name");
+            header.add("Submitted At");
+            header.addAll(questionHeaders);
+            writer.writeNext(header.toArray(new String[0]));
+
+            // 5. Write CSV rows
+            for (SurveyResponseDetail detail : responses) {
+                List<String> row = new ArrayList<>();
+                row.add(String.valueOf(detail.getResponseId()));
+                row.add(detail.getUserName());
+                row.add(detail.getSubmittedAt().toString());
+
+                for (String question : questionHeaders) {
+                    row.add(detail.getAnswers().getOrDefault(question, ""));
+                }
+
+                writer.writeNext(row.toArray(new String[0]));
+            }
+
+            // 6. Prepare response
+            byte[] csvBytes = sw.toString().getBytes("UTF-8");
+            logger.info("Successfully exported survey responses to CSV ({} bytes)", csvBytes.length);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=survey_responses.csv")
+                    .contentType(MediaType.parseMediaType("text/csv"))
+                    .body(csvBytes);
+
+        } catch (Exception e) {
+            logger.error("Error occurred while exporting CSV for survey ID: {}", surveyId, e);
+            throw new SurveyProcessingException("Failed to export survey responses to CSV", e);
+        }
+    }
 
 }

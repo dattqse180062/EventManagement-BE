@@ -75,7 +75,7 @@ public class SurveyManageAccessValidator {
         // Check if user is HEAD of the department
         if (!isHeadOfDepartment(department)) {
             throw new AccessDeniedException(
-                    "Access denied. Only department HEAD can create survey");
+                    "Access denied. Only department HEAD can work with survey(create,update,view all");
         }
 
         return department;
