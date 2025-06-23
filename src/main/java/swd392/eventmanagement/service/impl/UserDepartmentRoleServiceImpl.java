@@ -6,7 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import swd392.eventmanagement.exception.*;
+import swd392.eventmanagement.model.dto.response.AssignedUserResponseDTO;
 import swd392.eventmanagement.model.dto.response.DepartmentRoleShowDTO;
+import swd392.eventmanagement.model.dto.response.UnassignedUserResponseDTO;
 import swd392.eventmanagement.model.entity.Department;
 import swd392.eventmanagement.model.entity.DepartmentRole;
 import swd392.eventmanagement.model.entity.User;
@@ -19,6 +21,8 @@ import swd392.eventmanagement.repository.UserRepository;
 import swd392.eventmanagement.service.UserDepartmentRoleService;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -160,4 +164,64 @@ public class UserDepartmentRoleServiceImpl implements UserDepartmentRoleService 
             throw new DepartmentRoleProcessingException("Failed to remove user from department");
         }
     }
+
+    @Override
+    public List<AssignedUserResponseDTO> getAssignedUsers(Long departmentId) {
+        try {
+            logger.info("Fetching assigned users for department ID: {}", departmentId);
+
+            Department dept = departmentRepository.findById(departmentId)
+                    .orElseThrow(() -> new RuntimeException("Department not found with ID: " + departmentId));
+
+            List<UserDepartmentRole> assignments = userDepartmentRoleRepository.findByDepartment(dept);
+
+            List<AssignedUserResponseDTO> result = assignments.stream().map(udr -> {
+                AssignedUserResponseDTO dto = new AssignedUserResponseDTO();
+                dto.setUserId(udr.getUser().getId());
+                dto.setUserName(udr.getUser().getFullName());
+                dto.setRoleName(udr.getDepartmentRole().getName());
+                return dto;
+            }).collect(Collectors.toList());
+
+            logger.info("Found {} assigned users for department ID: {}", result.size(), departmentId);
+            return result;
+
+        } catch (Exception e) {
+            logger.error("Error while fetching assigned users for department ID: {}", departmentId, e);
+            throw e;
+        }
+    }
+    @Override
+    public List<UnassignedUserResponseDTO> getUnassignedUsers(Long departmentId) {
+        try {
+            logger.info("Fetching unassigned users for department ID: {}", departmentId);
+
+            Department dept = departmentRepository.findById(departmentId)
+                    .orElseThrow(() -> new RuntimeException("Department not found with ID: " + departmentId));
+
+            List<UserDepartmentRole> assignments = userDepartmentRoleRepository.findByDepartment(dept);
+            Set<Long> assignedUserIds = assignments.stream()
+                    .map(udr -> udr.getUser().getId())
+                    .collect(Collectors.toSet());
+
+            List<User> allUsers = userRepository.findAll();
+
+            List<UnassignedUserResponseDTO> result = allUsers.stream()
+                    .filter(user -> !assignedUserIds.contains(user.getId()))
+                    .map(user -> {
+                        UnassignedUserResponseDTO dto = new UnassignedUserResponseDTO();
+                        dto.setUserId(user.getId());
+                        dto.setUserName(user.getFullName());
+                        return dto;
+                    }).collect(Collectors.toList());
+
+            logger.info("Found {} unassigned users for department ID: {}", result.size(), departmentId);
+            return result;
+
+        } catch (Exception e) {
+            logger.error("Error while fetching unassigned users for department ID: {}", departmentId, e);
+            throw e;
+        }
+    }
+
 }
