@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -12,9 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import swd392.eventmanagement.model.dto.request.AssignRoleRequest;
+import swd392.eventmanagement.model.dto.response.AssignedUserResponseDTO;
 import swd392.eventmanagement.model.dto.response.DepartmentRoleShowDTO;
+import swd392.eventmanagement.model.dto.response.UnassignedUserResponseDTO;
 import swd392.eventmanagement.service.impl.UserDepartmentRoleServiceImpl;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -132,5 +136,28 @@ public class UserDepartmentRoleController {
     ) {
         userDepartmentRoleService.removeUserFromDepartment(userId, departmentId);
         return ResponseEntity.ok("User removed from department successfully");
+    }
+
+
+    @Operation(summary = "Get users already assigned to the department")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved assigned users"),
+            @ApiResponse(responseCode = "404", description = "Department not found")
+    })
+    @GetMapping("/{id}/assigned-users")
+    public ResponseEntity<List<AssignedUserResponseDTO>> getAssignedUsers(@PathVariable Long id) {
+        List<AssignedUserResponseDTO> result = userDepartmentRoleService.getAssignedUsers(id);
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(summary = "Get users not yet assigned to the department")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved unassigned users"),
+            @ApiResponse(responseCode = "404", description = "Department not found")
+    })
+    @GetMapping("/{id}/unassigned-users")
+    public ResponseEntity<List<UnassignedUserResponseDTO>> getUnassignedUsers(@PathVariable Long id) {
+        List<UnassignedUserResponseDTO> result = userDepartmentRoleService.getUnassignedUsers(id);
+        return ResponseEntity.ok(result);
     }
 }
