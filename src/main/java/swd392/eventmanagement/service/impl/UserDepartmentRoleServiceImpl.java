@@ -180,6 +180,7 @@ public class UserDepartmentRoleServiceImpl implements UserDepartmentRoleService 
                 dto.setUserId(udr.getUser().getId());
                 dto.setUserName(udr.getUser().getFullName());
                 dto.setRoleName(udr.getDepartmentRole().getName());
+                dto.setEmail(udr.getUser().getEmail());
                 return dto;
             }).collect(Collectors.toList());
 
@@ -196,26 +197,33 @@ public class UserDepartmentRoleServiceImpl implements UserDepartmentRoleService 
         try {
             logger.info("Fetching unassigned users for department ID: {}", departmentId);
 
+            // Retrieve department
             Department dept = departmentRepository.findById(departmentId)
                     .orElseThrow(() -> new RuntimeException("Department not found with ID: " + departmentId));
 
+            // Get all user assignments for the department
             List<UserDepartmentRole> assignments = userDepartmentRoleRepository.findByDepartment(dept);
             Set<Long> assignedUserIds = assignments.stream()
                     .map(udr -> udr.getUser().getId())
                     .collect(Collectors.toSet());
 
+            // Retrieve all users
             List<User> allUsers = userRepository.findAll();
 
+            // Filter: only users not assigned and who have "ROLE_LECTURER"
             List<UnassignedUserResponseDTO> result = allUsers.stream()
                     .filter(user -> !assignedUserIds.contains(user.getId()))
+                    .filter(user -> user.getRoles().stream()
+                            .anyMatch(role -> "ROLE_LECTURER".equalsIgnoreCase(role.getName())))
                     .map(user -> {
                         UnassignedUserResponseDTO dto = new UnassignedUserResponseDTO();
                         dto.setUserId(user.getId());
                         dto.setUserName(user.getFullName());
+                        dto.setEmail(user.getEmail());
                         return dto;
                     }).collect(Collectors.toList());
 
-            logger.info("Found {} unassigned users for department ID: {}", result.size(), departmentId);
+            logger.info("Found {} unassigned lecturer users for department ID: {}", result.size(), departmentId);
             return result;
 
         } catch (Exception e) {

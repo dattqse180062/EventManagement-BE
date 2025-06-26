@@ -6,4 +6,5 @@ import lombok.Data;
 public class UnassignedUserResponseDTO {
     private Long userId;
     private String userName;
+    private String email;
 }
