@@ -10,6 +10,8 @@ import swd392.eventmanagement.config.properties.JwtProperties;
 import swd392.eventmanagement.config.properties.CorsProperties;
 import swd392.eventmanagement.config.properties.DomainAuthProperties;
 
+import java.util.TimeZone;
+
 @SpringBootApplication
 @EnableConfigurationProperties({
         JwtProperties.class,
@@ -21,5 +23,10 @@ import swd392.eventmanagement.config.properties.DomainAuthProperties;
 public class EventManagementApplication {
     public static void main(String[] args) {
         SpringApplication.run(EventManagementApplication.class, args);
+    }
+
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
     }
 }

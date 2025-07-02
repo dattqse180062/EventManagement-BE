@@ -425,7 +425,9 @@ INSERT INTO users (email, full_name, provider_id) VALUES
   ('test12@fpt.edu.vn', 'test12', 'STUDENT-TEST-14'),
   ('test13@fpt.edu.vn', 'test13', 'STUDENT-TEST-15'),
   ('test14@fpt.edu.vn', 'test14', 'STUDENT-TEST-16'),
-  ('test15@fpt.edu.vn', 'test15', 'STUDENT-TEST-17');
+  ('test15@fpt.edu.vn', 'test15', 'STUDENT-TEST-17'),
+  ('haclong168h@gmail.com', 'LECTURER', 'LECTURER-TEST-03'),
+  ('tranpham437@gmail.com', 'LECTURER', 'LECTURER-TEST-04');
 
 -- UserRoles
 INSERT INTO user_roles (user_id, role_id)
@@ -451,6 +453,21 @@ WHERE u.email = 'tuanhuymai168h@gmail.com' AND r.name = 'ROLE_ADMIN';
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
 FROM users u, roles r
+WHERE u.email = 'haclong168h@gmail.com' AND r.name = 'ROLE_LECTURER';
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u, roles r
+WHERE u.email = 'tranpham437@gmail.com' AND r.name = 'ROLE_LECTURER';
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u, roles r
+WHERE u.email = 'tranpham437@gmail.com' AND r.name = 'ROLE_ADMIN';
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u, roles r
 WHERE u.email LIKE 'test%@fpt.edu.vn' AND r.name = 'ROLE_STUDENT';
 
 -- DepartmentRoles
@@ -469,7 +486,11 @@ INSERT INTO user_department_roles (user_id, department_id, department_role_id, c
 (1, 1, 1, NOW(), NOW()),
 (1, 2, 1, NOW(), NOW()),
 (3, 1, 1, NOW(), NOW()),
-(3, 2, 1, NOW(), NOW());
+(3, 2, 1, NOW(), NOW()),
+(20, 1, 1, NOW(), NOW()),
+(20, 2, 1, NOW(), NOW()),
+(21, 1, 1, NOW(), NOW()),
+(21, 2, 1, NOW(), NOW());
 
 -- EventTypes
 INSERT INTO event_types (name) VALUES

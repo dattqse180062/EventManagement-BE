@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/health")
 @Tag(name = "Health", description = "Health check API")
@@ -23,5 +27,16 @@ public class HealthController {
     @Operation(summary = "CI/CD test", description = "Endpoint to test CI/CD pipeline")
     public ResponseEntity<String> cicdTest() {
         return ResponseEntity.ok("CI/CD pipeline is working");
+    }
+
+    @GetMapping("/timestamp")
+    @Operation(summary = "System timestamp & timezone", description = "Get current system timestamp and timezone info")
+    public ResponseEntity<Map<String, String>> systemTimestamp() {
+        ZonedDateTime now = ZonedDateTime.now();
+        Map<String, String> result = new HashMap<>();
+        result.put("timestamp", now.toString());
+        result.put("timezone", now.getZone().getId());
+        result.put("offset", now.getOffset().toString());
+        return ResponseEntity.ok(result);
     }
 }
