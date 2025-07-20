@@ -81,14 +81,6 @@ public class SurveyServiceImpl implements SurveyService {
                 throw new SurveyProcessingException("Survey with the same title and time range already exists");
             }
 
-            // Validate duplicate question content
-            Set<String> uniqueQuestions = new HashSet<>();
-            for (QuestionCreateRequest qReq : request.getQuestions()) {
-                String normalized = qReq.getQuestion().trim().toLowerCase();
-                if (!uniqueQuestions.add(normalized)) {
-                    throw new SurveyProcessingException("Duplicate question: " + normalized);
-                }
-            }
 
             // Validate duplicate question order numbers
             Set<Integer> uniqueOrderNums = new HashSet<>();
