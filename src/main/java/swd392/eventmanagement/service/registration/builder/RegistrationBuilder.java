@@ -64,6 +64,7 @@ public class RegistrationBuilder {
 
         LocalDateTime now = LocalDateTime.now();
         registration.setStatus(RegistrationStatus.ATTENDED);
+        registration.setAttended(true);
         registration.setCheckinAt(now);
 
         Registration savedRegistration = registrationRepository.save(registration);
