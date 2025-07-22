@@ -208,13 +208,13 @@ public class SurveyServiceImpl implements SurveyService {
         }
 
         // Validate duplicate question content
-        Set<String> uniqueQuestions = new HashSet<>();
-        for (QuestionRequest qReq : request.getQuestions()) {
-            String normalizedQuestion = qReq.getQuestion().trim().toLowerCase();
-            if (!uniqueQuestions.add(normalizedQuestion)) {
-                throw new SurveyProcessingException("Duplicate question: " + normalizedQuestion);
-            }
-        }
+//        Set<String> uniqueQuestions = new HashSet<>();
+//        for (QuestionRequest qReq : request.getQuestions()) {
+//            String normalizedQuestion = qReq.getQuestion().trim().toLowerCase();
+//            if (!uniqueQuestions.add(normalizedQuestion)) {
+//                throw new SurveyProcessingException("Duplicate question: " + normalizedQuestion);
+//            }
+//        }
 
         // Validate duplicate order numbers
         Set<Integer> uniqueOrderNums = new HashSet<>();
